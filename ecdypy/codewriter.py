@@ -10,16 +10,14 @@ from ._meta import __version__, __source__
 
 
 @dataclass
-class Formatter():
+class Formatter:
     _indent_spaces: int
-    _seperator_function_chains: str 
-    _seperator: str
+    _separator_function_chains: str
+    _separator: str
 
 
 default_formatter = Formatter(
-    _indent_spaces=4,
-    _seperator_function_chains="",
-    _seperator="\n"
+    _indent_spaces=4, _separator_function_chains="", _separator="\n"
 )
 
 """
@@ -31,76 +29,97 @@ Priority Bands:
 """
 
 
-class CodeObject():
+class CodeObject:
     def __init__(self, __priority: int = -1):
         self._priority = __priority
 
 
 class CodeText(CodeObject):
-    def __init__(self, __text: str | list[str] = ""):
+    def __init__(self, __text: str | list[str] | None = None):
         self._text = deque()
-        self.add_text(__text)
-        super().__init__(1)  
+        if __text != None:
+            self.add_text(__text)
+        super().__init__(1)
 
-    def add_text(self, __text: str | list[str] | CodeText) -> None:
-        try:
-            if type(__text) == "str":
+    def add_text(self, __text: str | list[str] | CodeText | None = None) -> None:
+        try:    
+            if type(__text) is str:
                 self._text.append(__text)
-            elif type(__text) == CodeText:
-                self._text.extend(__text)
+            elif type(__text) is CodeText:
+                self._text.extend(__text._text)
+            elif type(__text) is deque:
+                self._text += __text 
+            elif __text is None:
+                self._text.append("")
+            else:
+                raise
         except Exception as e:
-            e.add_note(
-                f"Cannot add type \'{type(__text)}\' to a CodeText object."
-            )
-            e.add_note(
-                f"Type: \'{type(__text)}\' not defined for CodeText."
-            )
+            print(e)
+            print(f"Cannot add type '{type(__text)}' to a CodeText object.")
+            print(f"Type: '{type(__text)}' not defined for CodeText.")
 
-    def __add__(self, other: str | list[str]) -> CodeText:
-        return (CodeText(self._text + other))
-    
+    def __add__(self, __other: str | list[str]) -> CodeText:
+        return CodeText(self._text + __other)
+
     def __str__(self, __formatter: Formatter = default_formatter) -> str:
         buf = [str(x) for x in self._text]
-        return __formatter._seperator.join(buf)
-
-
-class CodeWriter():
-    def __init__(self, __formatter: Formatter = default_formatter):
-        self._indent_spaces = __formatter._indent_spaces
-        self._seperate_function_chains = __formatter._seperate_function_chains
-        self._seperator = __formatter._seperator
-
-        self._code_obj_tree = deque()
+        return __formatter._separator.join(buf)
     
-    def add(
-        self,
-        __object: str | Iterable[CodeObject] | CodeText
-    ):
+    def __add__(self, __other):
+        self.add_text(__other)
+        return CodeText(self)
+    
+    def __iadd__(self, __other):
+        self.add_text(__other)
+        return CodeText(self)
+    
+    def __len__(self):
+        return len(self._text)
+
+
+class CodeWriter:
+    def __init__(self, __formatter: Formatter = default_formatter, __init: deque | None = None):
+        self._formatter = __formatter
+        self._code_obj_tree = deque() if __init is None else __init
+
+    def add(self, __object: str | Iterable[CodeObject] | CodeText):
         try:
-            object = CodeText(__object)
-            if __object is str:
-                object = CodeText(str)
-            
+            object = CodeText("")
+            if type(__object) is str:
+                object = CodeText(__object)
+            elif type(__object) is CodeWriter:
+                self._code_obj_tree.extend(__object._code_obj_tree)
+                return
             self._code_obj_tree.append(object)
 
         except Exception as e:
             raise e
 
-    def add_auto_gen_comment(
-            self,
-            __license: str,
-            __author: str | list[str]
-    ):
+    def add_auto_gen_comment(self, __license: str | None = None, __author: str | list[str] | None = None):
         text = CodeText("/*")
         text.add_text(
             f"This file was automatically generated using ecdypy {__version__}"
         )
         text.add_text(f"ecdypy source code is available at: {__source__}")
-        text.add_text("*\\")
+        if __author is not None:
+            author = [__author] if __author is str else __author
+            text.add_text(f"Authors: {', '.join(__author)}")
+        if __license is not None:
+            text.add_text(f"This code is licensed under: {__license}")
+        text.add_text("*/")
         
+        self.add(text)
+
     def __str__(self):
         buf = [str(x) for x in self._code_obj_tree]
-        return self._seperator.join(buf)
+        return self._formatter._separator.join(buf)
+    
+    def __add__(self, __other: str | Iterable[CodeObject] | CodeText):
+        self.add(__other)
+        return self
+
+    def __len__(self):
+        return len(self._code_obj_tree)
 
 
 if __name__ == "__main__":
