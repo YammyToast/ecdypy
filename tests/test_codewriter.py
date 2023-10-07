@@ -54,6 +54,7 @@ def test_codewriter_add():
     assert len(cwr3) == 2
 
 def test_codewriter_iadd():
+    cwr = CodeWriter()
     
 
 test_codewriter_iadd()
