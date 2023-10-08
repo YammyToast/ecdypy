@@ -22,8 +22,17 @@ def test_codewriter_add_autogen_comment():
             "Nathan Webb <nathanwebb02@outlook.com>",
         ],
     )
-    x = str(cwr)
+    assert str(cwr)
 
+    cwr_no_args = CodeWriter()
+    cwr_no_args.add_auto_gen_comment()
+
+    assert str(cwr_no_args)
+    
+    cwr_str_author = CodeWriter()
+    cwr_str_author.add_auto_gen_comment(None, "James Hardy <cyanjamesmail@gmail.com>")
+
+    assert str(cwr_str_author)
 
 def test_codewriter_add_codetext():
     cwr = CodeWriter()
@@ -43,18 +52,24 @@ def test_codewriter_add_codetext():
         )
 
 
-def test_codewriter_add():
+def test_codewriter_concat():
     cwr = CodeWriter()
     cwr.add("Line 1")
 
     cwr2 = CodeWriter()
     cwr.add("Line 2")
-    
+
     cwr3 = cwr + cwr2
     assert len(cwr3) == 2
 
-def test_codewriter_iadd():
-    cwr = CodeWriter()
-    
+    cwri = CodeWriter()
+    cwri.add("Line 1")
 
-test_codewriter_iadd()
+    cwri2 = CodeWriter()
+    cwri2.add("Line 2")
+
+    cwri += cwri2
+    assert len(cwri) == 2
+
+
+test_codewriter_add_autogen_comment()
