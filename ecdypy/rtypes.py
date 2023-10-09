@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 import re
 
 
-class _PrimitiveType(ABC):
+class _PrimitiveType_(ABC):
     def __init__(self, __display_form: str) -> None:
         try:
             self._display_form = __display_form
@@ -24,15 +24,15 @@ class _PrimitiveType(ABC):
         pass
 
 
-class _INTEGER(_PrimitiveType):
+class _INTEGER_(_PrimitiveType_):
     def value_from(self, __value):
         try:
             if self.is_ok(__value):
                 return __value
-            elif re.search(self._lower_pattern):
-                return min_value
-            elif re.search(self._upper_pattern):
-                return max_value
+            elif re.search(self._lower_pattern, str(__value)):
+                return self.min_value
+            elif re.search(self._upper_pattern, str(__value)):
+                return self.max_value
             else:
                 raise
         except Exception:
@@ -45,7 +45,7 @@ class _INTEGER(_PrimitiveType):
         return self._display_form
 
 
-class _U8(_INTEGER):
+class _U8_(_INTEGER_):
     _ok_pattern = re.compile(r"^([0-9]|[1-9][0-9]|1[0-9]{2}|(2[0-4][0-9]|25[0-5]))$")
     _lower_pattern = re.compile(r"^(-[0-9]+)$")
     _upper_pattern = re.compile(r"^(25[6-9]|2[6-9][0-9]|[3-9][0-9]{2}|[0-9]{4,})$")
@@ -53,12 +53,12 @@ class _U8(_INTEGER):
     max_value = 255
 
 
-class __I8(_PrimitiveType):
+class _I8_(_PrimitiveType_):
     _ok_pattern = re.compile(r"^-?(1[0-1][0-9]|12[0-7]|[0-9]{0,2})$")
     _lower_pattern = re.compile(r"^-([0-9]{4,}|12[8-9]|1[3-9][0-9])$")
     _upper_pattern = re.compile(r"^([0-9]{4,}|12[8-9]|1[3-9][0-9])$")
     min_value = -127
     max_value = 128
 
-u8 = _U8("u8")
-print(u8)
+u8 = _U8_("u8")
+print(u8.value_from(-100000))
