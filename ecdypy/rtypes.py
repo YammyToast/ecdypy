@@ -1,5 +1,6 @@
 """ Abstract Base Class """
 from abc import ABC, abstractmethod
+from enum import Enum
 
 import re
 
@@ -105,5 +106,14 @@ class _ISIZE_(_PrimitiveType_):
     max_value = (2**63) - 1
 
 
-u8 = _U8_("u8")
-print(u8.value_from(256))
+class PTypes(Enum):
+    u8 = _U8_("u8")
+    i8 = _I8_("i8")
+    u16 = _U16_("u16")
+    i16 = _I16_("i16")
+    u32 = _U32_("u32")
+    i32 = _I32_("i32")
+    u64 = _U64_("u64")
+    i64 = _I64_("i64")
+    u128 = _U128_("u128")
+    i128 = _I128_("i128")
