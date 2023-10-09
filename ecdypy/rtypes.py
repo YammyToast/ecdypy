@@ -25,7 +25,7 @@ class _PrimitiveType_(ABC):
         pass
 
 
-class _INTEGER_(_PrimitiveType_):
+class _NUMBER_(_PrimitiveType_):
     def value_from(self, __value):
         try:
             if self.is_ok(__value):
@@ -46,64 +46,82 @@ class _INTEGER_(_PrimitiveType_):
         return self._display_form
 
 
-class _U8_(_INTEGER_):
+class _U8_(_NUMBER_):
     min_value = 0
     max_value = 255
 
 
-class _I8_(_PrimitiveType_):
+class _I8_(_NUMBER_):
     min_value = -127
     max_value = 128
 
 
-class _U16_(_PrimitiveType_):
+class _U16_(_NUMBER_):
     min_value = 0
     max_value = 65535
 
 
-class _I16_(_PrimitiveType_):
+class _I16_(_NUMBER_):
     min_value = -32767
     max_value = 32767
 
 
-class _U32_(_PrimitiveType_):
+class _U32_(_NUMBER_):
     min_value = 0
     max_value = (2**32) - 1
 
 
-class _I32_(_PrimitiveType_):
+class _I32_(_NUMBER_):
     min_value = -((2**31) - 1)
     max_value = (2**31) - 1
 
 
-class _U64_(_PrimitiveType_):
+class _U64_(_NUMBER_):
     min_value = 0
     max_value = (2**64) - 1
 
 
-class _I64_(_PrimitiveType_):
+class _I64_(_NUMBER_):
     min_value = -((2**63) - 1)
     max_value = (2**63) - 1
 
 
-class _U128_(_PrimitiveType_):
+class _U128_(_NUMBER_):
     min_value = 0
     max_value = (2**128) - 1
 
 
-class _I128_(_PrimitiveType_):
+class _I128_(_NUMBER_):
     min_value = -((2**127) - 1)
     max_value = (2**127) - 1
 
 
-class _USIZE_(_PrimitiveType_):
+class _USIZE_(_NUMBER_):
     min_value = 0
     max_value = (2**64) - 1
 
 
-class _ISIZE_(_PrimitiveType_):
+class _ISIZE_(_NUMBER_):
     min_value = -((2**63) - 1)
     max_value = (2**63) - 1
+
+
+class _F32_(_NUMBER_):
+    ok_pattern = r"([0-9]*\.[0-9]*_f32)"
+    min_value = 0
+    max_value = (2**32) - 1
+
+    def is_ok(self, __value: str | int) -> bool:
+        return int(__value) > self.max_value and int(__value) < self.min_value and re.search(self.ok_pattern, __value) != None
+
+
+class _F64_(_NUMBER_):
+    ok_pattern = r"([0-9]*\.[0-9]*_f64)"
+    min_value = 0
+    max_value = (2**64) - 1
+
+    def is_ok(self, __value: str | int) -> bool:
+        return int(__value) > self.max_value and int(__value) < self.min_value and re.search(self.ok_pattern, __value) != None
 
 
 class PTypes(Enum):
@@ -117,3 +135,6 @@ class PTypes(Enum):
     i64 = _I64_("i64")
     u128 = _U128_("u128")
     i128 = _I128_("i128")
+    f32 = _F32_("f32")
+    f64 = _F64_("f64")
+    
