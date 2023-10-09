@@ -51,22 +51,58 @@ class _U8_(_INTEGER_):
 
 
 class _I8_(_PrimitiveType_):
-
     min_value = -127
     max_value = 128
 
-# d
+
 class _U16_(_PrimitiveType_):
-    min_value = -127
-    max_value = 128
-#d
+    min_value = 0
+    max_value = 65535
+
+
 class _I16_(_PrimitiveType_):
-
-    min_value = -127
-    max_value = 128
-
+    min_value = -32767
+    max_value = 32767
 
 
+class _U32_(_PrimitiveType_):
+    min_value = 0
+    max_value = (2**32) - 1
+
+
+class _I32_(_PrimitiveType_):
+    min_value = -((2**31) - 1)
+    max_value = (2**31) - 1
+
+
+class _U64_(_PrimitiveType_):
+    min_value = 0
+    max_value = (2**64) - 1
+
+
+class _I64_(_PrimitiveType_):
+    min_value = -((2**63) - 1)
+    max_value = (2**63) - 1
+
+
+class _U128_(_PrimitiveType_):
+    min_value = 0
+    max_value = (2**128) - 1
+
+
+class _I128_(_PrimitiveType_):
+    min_value = -((2**127) - 1)
+    max_value = (2**127) - 1
+
+
+class _USIZE_(_PrimitiveType_):
+    min_value = 0
+    max_value = (2**64) - 1
+
+
+class _ISIZE_(_PrimitiveType_):
+    min_value = -((2**63) - 1)
+    max_value = (2**63) - 1
 
 
 u8 = _U8_("u8")
