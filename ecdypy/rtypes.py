@@ -37,7 +37,7 @@ class _NUMBER_(_PrimitiveType_):
             else:
                 raise
         except Exception:
-            print(f"Cannot assign value: {__value} to type u8.")
+            print(f"Cannot assign value: {__value} to type {self._display_form}.")
 
     def is_ok(self, __value: str | int) -> bool:
         return int(__value) > self.max_value and int(__value) < self.min_value
@@ -123,6 +123,34 @@ class _F64_(_NUMBER_):
     def is_ok(self, __value: str | int) -> bool:
         return int(__value) > self.max_value and int(__value) < self.min_value and re.search(self.ok_pattern, __value) != None
 
+class _BOOLEAN_(_PrimitiveType_):
+
+    def value_from(self, __value: bool | int | str) -> str:
+        try:
+            if not self.is_ok(__value):
+                raise
+            if re.search(r"^(1|true|True)$", __value):
+                return "true"
+            elif re.search(r"^(0|false|False)$", __value):
+                return "false"
+            else:
+                raise
+        except Exception as e:
+            print(f"Cannot assign value: {__value} to type u8.")
+
+    def is_ok(self, __value) -> bool:
+        if type(__value) is bool:
+            return True
+        elif __value == 0 or __value == 1:
+            return True
+        elif __value == "true" or __value == "false":
+            return True        
+        else:
+            return False
+
+    def __str__(self):
+        return self._display_form
+
 
 class PTypes(Enum):
     u8 = _U8_("u8")
@@ -135,6 +163,8 @@ class PTypes(Enum):
     i64 = _I64_("i64")
     u128 = _U128_("u128")
     i128 = _I128_("i128")
+    usize = _USIZE_("usize")
+    isize = _ISIZE_("isize")
     f32 = _F32_("f32")
     f64 = _F64_("f64")
     
