@@ -112,7 +112,11 @@ class _F32_(_NUMBER_):
     max_value = (2**32) - 1
 
     def is_ok(self, __value: str | int) -> bool:
-        return int(__value) > self.max_value and int(__value) < self.min_value and re.search(self.ok_pattern, __value) != None
+        return (
+            int(__value) > self.max_value
+            and int(__value) < self.min_value
+            and re.search(self.ok_pattern, __value) != None
+        )
 
 
 class _F64_(_NUMBER_):
@@ -121,10 +125,14 @@ class _F64_(_NUMBER_):
     max_value = (2**64) - 1
 
     def is_ok(self, __value: str | int) -> bool:
-        return int(__value) > self.max_value and int(__value) < self.min_value and re.search(self.ok_pattern, __value) != None
+        return (
+            int(__value) > self.max_value
+            and int(__value) < self.min_value
+            and re.search(self.ok_pattern, __value) != None
+        )
+
 
 class _BOOLEAN_(_PrimitiveType_):
-
     def value_from(self, __value: bool | int | str) -> str:
         try:
             if not self.is_ok(__value):
@@ -144,13 +152,49 @@ class _BOOLEAN_(_PrimitiveType_):
         elif __value == 0 or __value == 1:
             return True
         elif __value == "true" or __value == "false":
-            return True        
+            return True
         else:
             return False
 
     def __str__(self):
         return self._display_form
 
+
+class _STR_(_PrimitiveType_):
+    def value_from(self, __value: str | int | bool) -> str:
+        print("Value from")
+    def is_ok(self, __value: str):
+        print("SWAG SHIT")
+
+class _CHAR_(_PrimitiveType_):
+    """
+        Valid Integer Values under: https://www.unicode.org/glossary/#unicode_scalar_value
+    """
+    unicode_scalar_value_pattern = r"^(0x([0-9A-Fa-f]{0,3}|[0-9A-Fa-f]{5}|[0-9A-Da-d][0-7][0-9A-Fa-f]{2}|[E-Fe-f][0-9]{3}|10[0-9A-Fa-f]{4}))$"
+    def value_from(self, __value: str | int) -> str:
+        try:
+            if not self.is_ok(__value):
+                raise e
+            if re.search(self.unicode_scalar_value_pattern, __value) or type(__value) is int:
+                return chr(__value)
+            else:
+                return __value
+        except Exception as e:
+            print(e)
+
+
+    def is_ok(self, __value: str | int):
+        if type(__value) is int and chr(__value):
+            if __value > 0 and __value < 55295:
+                return True
+            elif __value > 57344 and __value < 1114111:
+                return True
+        elif type(__value) is str:
+            if len(__value) == 1:
+                return True
+            elif re.search(self.unicode_scalar_value_pattern, __value) != None:
+                return True
+        return False
 
 class PTypes(Enum):
     u8 = _U8_("u8")
@@ -167,4 +211,6 @@ class PTypes(Enum):
     isize = _ISIZE_("isize")
     f32 = _F32_("f32")
     f64 = _F64_("f64")
-    
+    bool = _BOOLEAN_("bool")
+    char = _CHAR_("")
+
