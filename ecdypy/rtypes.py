@@ -162,9 +162,10 @@ class _BOOLEAN_(_PrimitiveType_):
 
 class _STR_(_PrimitiveType_):
     def value_from(self, __value: str | int | bool) -> str:
-        print("Value from")
+        return str(__value)
     def is_ok(self, __value: str):
-        print("SWAG SHIT")
+        # the code of doom
+        return True
 
 class _CHAR_(_PrimitiveType_):
     """
@@ -212,5 +213,6 @@ class PTypes(Enum):
     f32 = _F32_("f32")
     f64 = _F64_("f64")
     bool = _BOOLEAN_("bool")
+    str = _STR_("str")
     char = _CHAR_("")
 
