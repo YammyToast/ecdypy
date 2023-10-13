@@ -1,9 +1,12 @@
 """ Abstract Base Class """
 from abc import ABC, abstractmethod
 from enum import Enum
+import traceback
 
 import re
 
+class UnknownTupleArgument(Exception):
+    pass
 
 class _PrimitiveType_(ABC):
     def __init__(self, __display_form: str) -> None:
@@ -163,26 +166,35 @@ class _BOOLEAN_(_PrimitiveType_):
 class _STR_(_PrimitiveType_):
     def value_from(self, __value: str | int | bool) -> str:
         return str(__value)
+
     def is_ok(self, __value: str):
         # the code of doom
         return True
 
+    def __str__(self):
+        return self._display_form
+
+
 class _CHAR_(_PrimitiveType_):
     """
-        Valid Integer Values under: https://www.unicode.org/glossary/#unicode_scalar_value
+    Valid Integer Values under: https://www.unicode.org/glossary/#unicode_scalar_value
     """
+
     unicode_scalar_value_pattern = r"^(0x([0-9A-Fa-f]{0,3}|[0-9A-Fa-f]{5}|[0-9A-Da-d][0-7][0-9A-Fa-f]{2}|[E-Fe-f][0-9]{3}|10[0-9A-Fa-f]{4}))$"
+
     def value_from(self, __value: str | int) -> str:
         try:
             if not self.is_ok(__value):
                 raise e
-            if re.search(self.unicode_scalar_value_pattern, __value) or type(__value) is int:
+            if (
+                re.search(self.unicode_scalar_value_pattern, __value)
+                or type(__value) is int
+            ):
                 return chr(__value)
             else:
                 return __value
         except Exception as e:
             print(e)
-
 
     def is_ok(self, __value: str | int):
         if type(__value) is int and chr(__value):
@@ -196,6 +208,10 @@ class _CHAR_(_PrimitiveType_):
             elif re.search(self.unicode_scalar_value_pattern, __value) != None:
                 return True
         return False
+
+    def __str__(self):
+        return self._display_form
+
 
 class PTypes(Enum):
     u8 = _U8_("u8")
@@ -216,3 +232,51 @@ class PTypes(Enum):
     str = _STR_("str")
     char = _CHAR_("")
 
+
+# ==============================================================================================
+
+
+class Tuple():
+    def __init__(self, *args: _PrimitiveType_ | list[_PrimitiveType_], **kwargs) -> None:
+        try:
+            check = kwargs.get("check") if type(kwargs.get("check")) is bool else True
+            arg_list = Tuple._flatten_args(list(args))
+            if check == True:
+                for arg in arg_list:
+                    # why is contains dunder???????
+                    if not PTypes._member_names_.__contains__(arg):
+                        raise UnknownTupleArgument(arg)
+            self._arg_list = arg_list
+            self._check = check
+        except UnknownTupleArgument as e:
+            traceback.print_stack()
+            print(f"\nUnknown type: \'{e.args[0]}\' provided in tuple assignment.\n")
+
+
+
+    @staticmethod
+    def _flatten_args(__list):
+        """
+        Recursive Method Derived from:
+        https://stackabuse.com/python-how-to-flatten-list-of-lists/
+        """
+        if len(__list) == 0:
+            return __list
+        if isinstance(__list[0], list):
+            return Tuple._flatten_args(__list[0]) + Tuple._flatten_args(__list[1:])
+        if isinstance(__list[0], Tuple):
+            return __list[0].get_types() + Tuple._flatten_args(__list[1:])
+        return __list[:1] + Tuple._flatten_args(__list[1:])
+    
+    def get_types(self) -> list[str]:
+        return self._arg_list
+
+    def __str__(self):
+        buf = [str(x) for x in self._arg_list]
+        return f"({', '.join(buf)})"
+
+tuple = Tuple(["u8", "u64", ["u16", "u32"]], "u128", check=True)
+print(tuple)
+
+tuple_two = Tuple(tuple, "char", check=True)
+print(tuple_two)
