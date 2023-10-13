@@ -246,12 +246,18 @@ class Tuple():
                     # why is contains dunder???????
                     if not PTypes._member_names_.__contains__(arg):
                         raise UnknownTupleArgument(arg)
+            Tuple._compile_args(list(args))
             self._arg_list = arg_list
             self._check = check
         except UnknownTupleArgument as e:
             traceback.print_stack()
             print(f"\nUnknown type: \'{e.args[0]}\' provided in tuple assignment.\n")
 
+    @staticmethod
+    def _compile_args(__list):
+        print(__list)
+        for val in __list:
+            print(f"TYPE: {type(val)}")
 
 
     @staticmethod
@@ -266,6 +272,8 @@ class Tuple():
             return Tuple._flatten_args(__list[0]) + Tuple._flatten_args(__list[1:])
         if isinstance(__list[0], Tuple):
             return __list[0].get_types() + Tuple._flatten_args(__list[1:])
+        if isinstance(__list[0], tuple):
+            return Tuple._flatten_args(list(__list[0])) + Tuple._flatten_args(__list[1:])
         return __list[:1] + Tuple._flatten_args(__list[1:])
     
     def get_types(self) -> list[str]:
@@ -275,8 +283,8 @@ class Tuple():
         buf = [str(x) for x in self._arg_list]
         return f"({', '.join(buf)})"
 
-tuple = Tuple(["u8", "u64", ["u16", "u32"]], "u128", check=True)
-print(tuple)
+tuple_one = Tuple(["u8", "u64", ["u16", "u32"]], "u128", check=True)
+print(tuple_one)
 
-tuple_two = Tuple(tuple, "char", check=True)
+tuple_two = Tuple(tuple_one, ("u16", "u8", "char"), check=True)
 print(tuple_two)
