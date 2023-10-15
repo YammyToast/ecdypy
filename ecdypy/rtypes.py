@@ -200,6 +200,7 @@ class _CHAR_(_PrimitiveType_):
             else:
                 return __value
         except Exception as e:
+            traceback.print_stack()
             print(e)
 
     def is_ok(self, __value: str | int):
@@ -297,10 +298,11 @@ class Tuple:
             )
         return __list[:1] + Tuple._flatten_args(__list[1:])
 
-    def value_from(self, *args: _PrimitiveType_):
+    def value_from(self, *args: _PrimitiveType_, **kwargs):
         try:
-            arg_vals = list(args)
-            flat_vals = Tuple._flatten_args(arg_vals)
+
+            arg_vals = list(args) if kwargs.get('l') == None else list(kwargs.get('l'))
+
             out_vals = []
             if (x := self.get_types_count()) != (
                 y := len(Tuple._flatten_args(list(arg_vals)))
@@ -309,13 +311,18 @@ class Tuple:
 
             for i, type_item in enumerate(self._type_tree):
                 if type(type_item) is Tuple:
-                    out_vals.append(type_item.value_from(arg_vals[i]))
+                    # print(f"TYPE: {type_item}")
+                    # print(f"i: {i}")
+                    # print(f"ARG: {arg_vals[i]}")
+                    out_vals.append(type_item.value_from(l=arg_vals[i]))
                 else:
+                    print(arg_vals[i])
                     out_vals.append(
-                        PTypes[type_item].value.value_from(flat_vals[i])
+                        PTypes[type_item].value.value_from(arg_vals[i])
                     )
 
             return tuple(out_vals)
+        
         except IncorrectArgCount as e:
             traceback.print_stack()
             print(f"\nInvalid number of args given: {y} ({x} required).\n")
@@ -342,5 +349,8 @@ tuple_one = Tuple(["u8", "u64", ["u16", "u32"]], "u128", ("u16", "u16"), check=T
 tuple_one_vals = tuple_one.value_from(1, 1, 2, 3, 4, (5, 6))
 print(tuple_one_vals)
 
-tuple_two = Tuple(tuple_one, ("u16", "u8", "char", ("u16", "u8")), "char", check=True)
-# print(tuple_two)
+print("\n\n\n\n")
+
+tuple_two = Tuple(("u16", "u8", "char", ("u16", "u8")), "char", check=True)
+tuple_two_vals = tuple_two.value_from((1, 1, "c", (1, 1)), "d")
+print(tuple_two_vals)
