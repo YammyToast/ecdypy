@@ -5,8 +5,14 @@ import traceback
 
 import re
 
+
 class UnknownTupleArgument(Exception):
     pass
+
+
+class IncorrectArgCount(Exception):
+    pass
+
 
 class _PrimitiveType_(ABC):
     def __init__(self, __display_form: str) -> None:
@@ -43,7 +49,7 @@ class _NUMBER_(_PrimitiveType_):
             print(f"Cannot assign value: {__value} to type {self._display_form}.")
 
     def is_ok(self, __value: str | int) -> bool:
-        return int(__value) > self.max_value and int(__value) < self.min_value
+        return int(__value) < self.max_value and int(__value) > self.min_value
 
     def __str__(self) -> str:
         return self._display_form
@@ -236,23 +242,30 @@ class PTypes(Enum):
 # ==============================================================================================
 
 
-class Tuple():
-    def __init__(self, *args: _PrimitiveType_ | list[_PrimitiveType_], **kwargs) -> None:
+class Tuple:
+    def __init__(
+        self, *args: _PrimitiveType_ | list[_PrimitiveType_], **kwargs
+    ) -> None:
         try:
             check = kwargs.get("check") if type(kwargs.get("check")) is bool else True
             arg_list = Tuple._flatten_args(list(args))
             if check == True:
                 for arg in arg_list:
                     # why is contains dunder???????
-                    if not PTypes._member_names_.__contains__(arg):
+                    if (
+                        not PTypes._member_names_.__contains__(arg)
+                        and type(arg) is not Tuple
+                    ):
                         raise UnknownTupleArgument(arg)
             types = Tuple._convert_interior_tuples(list(args))
 
-            self._type_list = types
+            self._type_tree = types
+            self._type_list = arg_list
             self._check = check
+
         except UnknownTupleArgument as e:
             traceback.print_stack()
-            print(f"\nUnknown type: \'{e.args[0]}\' provided in tuple assignment.\n")
+            print(f"\nUnknown type: '{e.args[0]}' provided in tuple assignment.\n")
 
     @staticmethod
     def _convert_interior_tuples(__list):
@@ -261,9 +274,10 @@ class Tuple():
         if isinstance(__list[0], tuple):
             return [Tuple(list(__list[0]))] + Tuple._convert_interior_tuples(__list[1:])
         if isinstance(__list[0], list):
-            return Tuple._convert_interior_tuples(__list[0]) + Tuple._convert_interior_tuples(__list[1:])
+            return Tuple._convert_interior_tuples(
+                __list[0]
+            ) + Tuple._convert_interior_tuples(__list[1:])
         return __list[:1] + Tuple._convert_interior_tuples(__list[1:])
-
 
     @staticmethod
     def _flatten_args(__list):
@@ -278,18 +292,55 @@ class Tuple():
         if isinstance(__list[0], Tuple):
             return __list[0].get_types() + Tuple._flatten_args(__list[1:])
         if isinstance(__list[0], tuple):
-            return Tuple._flatten_args(list(__list[0])) + Tuple._flatten_args(__list[1:])
+            return Tuple._flatten_args(list(__list[0])) + Tuple._flatten_args(
+                __list[1:]
+            )
         return __list[:1] + Tuple._flatten_args(__list[1:])
-    
+
+    def value_from(self, *args: _PrimitiveType_):
+        try:
+            arg_vals = list(args)
+            flat_vals = Tuple._flatten_args(arg_vals)
+            out_vals = []
+            if (x := self.get_types_count()) != (
+                y := len(Tuple._flatten_args(list(arg_vals)))
+            ):
+                raise IncorrectArgCount
+
+            for i, type_item in enumerate(self._type_tree):
+                if type(type_item) is Tuple:
+                    out_vals.append(type_item.value_from(arg_vals[i]))
+                else:
+                    out_vals.append(
+                        PTypes[type_item].value.value_from(flat_vals[i])
+                    )
+
+            return out_vals
+        except IncorrectArgCount as e:
+            traceback.print_stack()
+            print(f"\nInvalid number of args given: {y} ({x} required).\n")
+
+    def get_types_count(self) -> int:
+        count = 0
+        for t in self._type_tree:
+            if isinstance(t, Tuple):
+                count += t.get_types_count()
+            else:
+                count += 1
+        return count
+
     def get_types(self) -> list[str]:
-        return self._type_list
+        return self._type_tree
 
     def __str__(self):
-        buf = [str(x) for x in self._type_list]
+        buf = [str(x) for x in self._type_tree]
         return f"({', '.join(buf)})"
 
-tuple_one = Tuple(["u8", "u64", ["u16", "u32"]], "u128", check=True)
+
+tuple_one = Tuple(["u8", "u64", ["u16", "u32"]], "u128", ("u16", "u16"), check=True)
 # print(tuple_one)
+tuple_one_vals = tuple_one.value_from(1, 1, 2, 3, 4, (5, 6))
+print(tuple_one_vals)
 
 tuple_two = Tuple(tuple_one, ("u16", "u8", "char", ("u16", "u8")), "char", check=True)
-print(tuple_two)
+# print(tuple_two)
