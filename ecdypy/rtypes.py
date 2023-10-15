@@ -315,7 +315,7 @@ class Tuple:
                         PTypes[type_item].value.value_from(flat_vals[i])
                     )
 
-            return out_vals
+            return tuple(out_vals)
         except IncorrectArgCount as e:
             traceback.print_stack()
             print(f"\nInvalid number of args given: {y} ({x} required).\n")
