@@ -271,6 +271,8 @@ class Tuple:
             # why is contains dunder???????
             if not (PTypes._member_names_.__contains__(arg) or arg in PTypes) and type(arg) is not Tuple:
                 raise UnknownTypeArgument(arg)
+            if type(arg) is Tuple:
+                Tuple._check_arg_list(arg._type_tree)
 
     @staticmethod
     def _convert_recursive_objects(__list):
@@ -345,15 +347,15 @@ class Tuple:
         return f"({', '.join(buf)})"
 
 
-tuple_one = Tuple(["u8", "u64", ["u16", "u32"]], "u128", ("u16", "u16"), check=True)
-tuple_one_vals = tuple_one.value_from(1, 1, 2, 3, 4, (5, 6))
+# tuple_one = Tuple(["u8", "u64", ["u16", "u32"]], "u128", ("u16", "u16"), check=True)
+# tuple_one_vals = tuple_one.value_from(1, 1, 2, 3, 4, (5, 6))
 
-tuple_two = Tuple(("u16", "u8", "char", ("u16", "u8")), "char", check=True)
-tuple_two_vals = tuple_two.value_from((1, 1, "c", (1, 1)), "d")
+# tuple_two = Tuple(("u16", "u8", "char", ("u16", "u8")), "char", check=True)
+# tuple_two_vals = tuple_two.value_from((1, 1, "c", (1, 1)), "d")
 
-tuple_three = Tuple(PTypes.u8, PTypes.u16)
-tuple_three_vals = tuple_three.value_from(16, 16)
-print(tuple_three_vals)
+# tuple_three = Tuple(PTypes.u8, PTypes.u16)
+# tuple_three_vals = tuple_three.value_from(16, 16)
+# print(tuple_three_vals)
 
 # ==============================================================================================
 # ==============================================================================================
@@ -365,16 +367,23 @@ class Struct:
     ) -> Struct:
         try:
             check = kwargs.get("check") if type(kwargs.get("check")) is bool else True
-
-            print(list(args))
+            arg_list = list(args)
 
             if check == True:
-                print("")
+                Struct._check_arg_list(arg_list)
 
+            self._type_list = arg_list
         except UnknownTypeArgument as e:
             traceback.print_stack()
             print(f"\nUnknown type: '{e.args[0]}' provided in struct assignment.\n")
 
+    @staticmethod
+    def _check_arg_list(__list):
+        for arg in __list:
+            if type(arg) is dict:
+                print("Dict time")
+            elif type(arg) is tuple and len(arg) == 2:
+                print(f"HERE: {arg[-1]}")
     @staticmethod
     def _convert_recursive_objects():
         print("CONVERT")
@@ -387,5 +396,11 @@ class Struct:
     #     return f"({', '.join(buf)})"
 
 
-# struct_one = Struct({"A": "u16", "B": "u8"})
-# print(struct_one)
+struct_one = Struct({"A": "u16", "B": "u8"})
+print(struct_one)
+
+struct_two = Struct({"A": PTypes.u16, "B": PTypes.str})
+print(struct_two)
+
+struct_three = Struct(("A", PTypes.u8), ("B", "u8"))
+print(struct_three)
