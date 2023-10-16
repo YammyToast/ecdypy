@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """ Abstract Base Class """
 from abc import ABC, abstractmethod
 from enum import Enum
@@ -6,7 +8,7 @@ import traceback
 import re
 
 
-class UnknownTupleArgument(Exception):
+class UnknownTypeArgument(Exception):
     pass
 
 
@@ -241,44 +243,48 @@ class PTypes(Enum):
 
 
 # ==============================================================================================
+# ==============================================================================================
 
 
 class Tuple:
     def __init__(
         self, *args: _PrimitiveType_ | list[_PrimitiveType_], **kwargs
-    ) -> None:
+    ) -> self:
         try:
             check = kwargs.get("check") if type(kwargs.get("check")) is bool else True
             arg_list = Tuple._flatten_args(list(args))
             if check == True:
-                for arg in arg_list:
-                    # why is contains dunder???????
-                    if (
-                        not PTypes._member_names_.__contains__(arg)
-                        and type(arg) is not Tuple
-                    ):
-                        raise UnknownTupleArgument(arg)
-            types = Tuple._convert_interior_tuples(list(args))
+                Tuple._check_arg_list(arg_list)
+            types = Tuple._convert_recursive_objects(list(args))
 
             self._type_tree = types
             self._type_list = arg_list
             self._check = check
 
-        except UnknownTupleArgument as e:
+        except UnknownTypeArgument as e:
             traceback.print_stack()
             print(f"\nUnknown type: '{e.args[0]}' provided in tuple assignment.\n")
 
     @staticmethod
-    def _convert_interior_tuples(__list):
+    def _check_arg_list(__list):
+        for arg in __list:
+            # why is contains dunder???????
+            if not (PTypes._member_names_.__contains__(arg) or arg in PTypes) and type(arg) is not Tuple:
+                raise UnknownTypeArgument(arg)
+
+    @staticmethod
+    def _convert_recursive_objects(__list):
         if len(__list) == 0:
             return __list
         if isinstance(__list[0], tuple):
-            return [Tuple(list(__list[0]))] + Tuple._convert_interior_tuples(__list[1:])
-        if isinstance(__list[0], list):
-            return Tuple._convert_interior_tuples(
+            return [Tuple(list(__list[0]))] + Tuple._convert_recursive_objects(
+                __list[1:]
+            )
+        elif isinstance(__list[0], list):
+            return Tuple._convert_recursive_objects(
                 __list[0]
-            ) + Tuple._convert_interior_tuples(__list[1:])
-        return __list[:1] + Tuple._convert_interior_tuples(__list[1:])
+            ) + Tuple._convert_recursive_objects(__list[1:])
+        return __list[:1] + Tuple._convert_recursive_objects(__list[1:])
 
     @staticmethod
     def _flatten_args(__list):
@@ -300,8 +306,7 @@ class Tuple:
 
     def value_from(self, *args: _PrimitiveType_, **kwargs):
         try:
-
-            arg_vals = list(args) if kwargs.get('l') == None else list(kwargs.get('l'))
+            arg_vals = list(args) if kwargs.get("l") == None else list(kwargs.get("l"))
 
             out_vals = []
             if (x := self.get_types_count()) != (
@@ -311,18 +316,14 @@ class Tuple:
 
             for i, type_item in enumerate(self._type_tree):
                 if type(type_item) is Tuple:
-                    # print(f"TYPE: {type_item}")
-                    # print(f"i: {i}")
-                    # print(f"ARG: {arg_vals[i]}")
                     out_vals.append(type_item.value_from(l=arg_vals[i]))
+                elif type(type_item) is PTypes:
+                    out_vals.append(type_item.value.value_from(arg_vals[i]))
                 else:
-                    print(arg_vals[i])
-                    out_vals.append(
-                        PTypes[type_item].value.value_from(arg_vals[i])
-                    )
+                    out_vals.append(PTypes[type_item].value.value_from(arg_vals[i]))
 
             return tuple(out_vals)
-        
+
         except IncorrectArgCount as e:
             traceback.print_stack()
             print(f"\nInvalid number of args given: {y} ({x} required).\n")
@@ -345,12 +346,46 @@ class Tuple:
 
 
 tuple_one = Tuple(["u8", "u64", ["u16", "u32"]], "u128", ("u16", "u16"), check=True)
-# print(tuple_one)
 tuple_one_vals = tuple_one.value_from(1, 1, 2, 3, 4, (5, 6))
-print(tuple_one_vals)
-
-print("\n\n\n\n")
 
 tuple_two = Tuple(("u16", "u8", "char", ("u16", "u8")), "char", check=True)
 tuple_two_vals = tuple_two.value_from((1, 1, "c", (1, 1)), "d")
-print(tuple_two_vals)
+
+tuple_three = Tuple(PTypes.u8, PTypes.u16)
+tuple_three_vals = tuple_three.value_from(16, 16)
+print(tuple_three_vals)
+
+# ==============================================================================================
+# ==============================================================================================
+
+
+class Struct:
+    def __init__(
+        self, *args: _PrimitiveType_ | list[_PrimitiveType_], **kwargs
+    ) -> Struct:
+        try:
+            check = kwargs.get("check") if type(kwargs.get("check")) is bool else True
+
+            print(list(args))
+
+            if check == True:
+                print("")
+
+        except UnknownTypeArgument as e:
+            traceback.print_stack()
+            print(f"\nUnknown type: '{e.args[0]}' provided in struct assignment.\n")
+
+    @staticmethod
+    def _convert_recursive_objects():
+        print("CONVERT")
+
+    # def get_types(self) -> list[str]:
+    #     return self._type_tree
+
+    # def __str__(self):
+    #     buf = [str(x) for x in self._type_tree]
+    #     return f"({', '.join(buf)})"
+
+
+# struct_one = Struct({"A": "u16", "B": "u8"})
+# print(struct_one)
