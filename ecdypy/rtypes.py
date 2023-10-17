@@ -409,13 +409,19 @@ class Struct:
 
     @staticmethod
     def _check_arg_type(__arg):
+        if type(__arg) is dict:
+            Struct._check_arg_list([__arg])
+            return
         if type(__arg) is Struct:
             Struct._check_arg_list(__arg._type_tree)
+            return
         elif type(__arg) is Tuple:
             Tuple._check_arg_list(__arg._type_tree)
+            return
         elif type(__arg) is str:
             if not PTypes._member_names_.__contains__(__arg):
                 raise UnknownTypeArgument(__arg)
+            return
         elif type(__arg) is not PTypes:
             raise UnknownTypeArgument(__arg)
 
