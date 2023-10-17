@@ -16,6 +16,10 @@ class IncorrectArgCount(Exception):
     pass
 
 
+class InvalidStructAttributeName(Exception):
+    pass
+
+
 class _PrimitiveType_(ABC):
     def __init__(self, __display_form: str) -> None:
         try:
@@ -269,7 +273,10 @@ class Tuple:
     def _check_arg_list(__list):
         for arg in __list:
             # why is contains dunder???????
-            if not (PTypes._member_names_.__contains__(arg) or arg in PTypes) and type(arg) is not Tuple:
+            if (
+                not (PTypes._member_names_.__contains__(arg) or arg in PTypes)
+                and type(arg) is not Tuple
+            ):
                 raise UnknownTypeArgument(arg)
             if type(arg) is Tuple:
                 Tuple._check_arg_list(arg._type_tree)
@@ -371,19 +378,47 @@ class Struct:
 
             if check == True:
                 Struct._check_arg_list(arg_list)
-
+            types = []
             self._type_list = arg_list
+            self._type_tree = types
         except UnknownTypeArgument as e:
             traceback.print_stack()
             print(f"\nUnknown type: '{e.args[0]}' provided in struct assignment.\n")
+        except InvalidStructAttributeName as e:
+            traceback.print_stack()
+            print(
+                f"\nInvalid attribute name: '{e.args[0]}' provided in struct assignment."
+            )
 
     @staticmethod
     def _check_arg_list(__list):
         for arg in __list:
             if type(arg) is dict:
-                print("Dict time")
+                for key, value in arg.items():
+                    print(f"Key: {key}, Value: {value}")
+                    if re.search(r"^([a-zA-Z_]{1}.*)$", key) is None:
+                        raise InvalidStructAttributeName(key)
+                    Struct._check_arg_type(value)
+            # Handle Tuples
             elif type(arg) is tuple and len(arg) == 2:
-                print(f"HERE: {arg[-1]}")
+                Struct._check_arg_type(arg[-1])
+                if re.search(r"^([a-zA-Z_]{1}.*)$", arg[0]) is None:
+                    raise InvalidStructAttributeName(arg[0])
+            else:
+                raise UnknownTypeArgument(arg)
+
+    @staticmethod
+    def _check_arg_type(__arg):
+        if type(__arg) is Struct:
+            Struct._check_arg_list(__arg._type_tree)
+        elif type(__arg) is Tuple:
+            Tuple._check_arg_list(__arg._type_tree)
+        elif type(__arg) is str:
+            if not PTypes._member_names_.__contains__(__arg):
+                raise UnknownTypeArgument(__arg)
+        elif type(__arg) is not PTypes:
+            raise UnknownTypeArgument(__arg)
+
     @staticmethod
     def _convert_recursive_objects():
         print("CONVERT")
@@ -396,11 +431,11 @@ class Struct:
     #     return f"({', '.join(buf)})"
 
 
-struct_one = Struct({"A": "u16", "B": "u8"})
+struct_one = Struct({"A": "u8", "B": {"C": "u16", "D": "u8"}})
 print(struct_one)
 
 struct_two = Struct({"A": PTypes.u16, "B": PTypes.str})
 print(struct_two)
 
-struct_three = Struct(("A", PTypes.u8), ("B", "u8"))
+struct_three = Struct(("A", PTypes.u8), ("B", "u8"), ("C", "u128"))
 print(struct_three)
