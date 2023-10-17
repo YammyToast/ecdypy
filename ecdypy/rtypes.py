@@ -378,7 +378,7 @@ class Struct:
 
             if check == True:
                 Struct._check_arg_list(arg_list)
-            types = []
+            types = Struct._convert_recursive_objects(arg_list)
             self._type_list = arg_list
             self._type_tree = types
         except UnknownTypeArgument as e:
@@ -395,7 +395,6 @@ class Struct:
         for arg in __list:
             if type(arg) is dict:
                 for key, value in arg.items():
-                    print(f"Key: {key}, Value: {value}")
                     if re.search(r"^([a-zA-Z_]{1}.*)$", key) is None:
                         raise InvalidStructAttributeName(key)
                     Struct._check_arg_type(value)
@@ -412,11 +411,14 @@ class Struct:
         if type(__arg) is dict:
             Struct._check_arg_list([__arg])
             return
-        if type(__arg) is Struct:
+        elif type(__arg) is Struct:
             Struct._check_arg_list(__arg._type_tree)
             return
         elif type(__arg) is Tuple:
             Tuple._check_arg_list(__arg._type_tree)
+            return
+        elif type(__arg) is tuple:
+            Struct._check_arg_type(__arg[-1])
             return
         elif type(__arg) is str:
             if not PTypes._member_names_.__contains__(__arg):
@@ -426,15 +428,30 @@ class Struct:
             raise UnknownTypeArgument(__arg)
 
     @staticmethod
-    def _convert_recursive_objects():
-        print("CONVERT")
+    def _convert_recursive_objects(__list):
+        # print(f"{__list}, {type(__list)}, {type(__list) is tuple}")
+        if len(__list) == 0:
+            return __list
+        if type(__list[0]) is PTypes or type(__list[0]) is str:
+            return __list[0]
+        if isinstance(__list[0], tuple):
+            return [
+                (__list[0][0], Struct._convert_recursive_objects([__list[0][1]]))
+            ] + Struct._convert_recursive_objects(__list[1:])
+        if isinstance(__list[0], dict):
+            return [
+                (x, Struct._convert_recursive_objects([y]))
+                for x, y in __list[0].items()
+            ] + Struct._convert_recursive_objects(__list[1:])
 
-    # def get_types(self) -> list[str]:
-    #     return self._type_tree
+        return __list[:1] + Struct._convert_recursive_objects(__list[1:])
 
-    # def __str__(self):
-    #     buf = [str(x) for x in self._type_tree]
-    #     return f"({', '.join(buf)})"
+    def get_types(self) -> list[str]:
+        return self._type_tree
+
+    def __str__(self):
+        buf = [str(x) for x in self._type_tree]
+        return f"[{', '.join(buf)}]"
 
 
 struct_one = Struct({"A": "u8", "B": {"C": "u16", "D": "u8"}})
@@ -443,5 +460,5 @@ print(struct_one)
 struct_two = Struct({"A": PTypes.u16, "B": PTypes.str})
 print(struct_two)
 
-struct_three = Struct(("A", PTypes.u8), ("B", "u8"), ("C", "u128"))
+struct_three = Struct(("A", PTypes.u8), ("B", "u8"), ("C", ("D", "u16")))
 print(struct_three)
