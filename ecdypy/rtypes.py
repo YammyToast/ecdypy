@@ -5,6 +5,8 @@ from abc import ABC, abstractmethod
 from enum import Enum
 import traceback
 
+from codewriter import default_formatter
+
 import re
 
 
@@ -226,7 +228,7 @@ class _CHAR_(_PrimitiveType_):
         return self._display_form
 
 
-class PTypes(Enum):
+class RTypes(Enum):
     u8 = _U8_("u8")
     i8 = _I8_("i8")
     u16 = _U16_("u16")
@@ -274,7 +276,7 @@ class Tuple:
         for arg in __list:
             # why is contains dunder???????
             if (
-                not (PTypes._member_names_.__contains__(arg) or arg in PTypes)
+                not (RTypes._member_names_.__contains__(arg) or arg in RTypes)
                 and type(arg) is not Tuple
             ):
                 raise UnknownTypeArgument(arg)
@@ -326,10 +328,10 @@ class Tuple:
             for i, type_item in enumerate(self._type_tree):
                 if type(type_item) is Tuple:
                     out_vals.append(type_item.value_from(l=arg_vals[i]))
-                elif type(type_item) is PTypes:
+                elif type(type_item) is RTypes:
                     out_vals.append(type_item.value.value_from(arg_vals[i]))
                 else:
-                    out_vals.append(PTypes[type_item].value.value_from(arg_vals[i]))
+                    out_vals.append(RTypes[type_item].value.value_from(arg_vals[i]))
 
             return tuple(out_vals)
 
@@ -360,7 +362,7 @@ class Tuple:
 # tuple_two = Tuple(("u16", "u8", "char", ("u16", "u8")), "char", check=True)
 # tuple_two_vals = tuple_two.value_from((1, 1, "c", (1, 1)), "d")
 
-# tuple_three = Tuple(PTypes.u8, PTypes.u16)
+# tuple_three = Tuple(RTypes.u8, RTypes.u16)
 # tuple_three_vals = tuple_three.value_from(16, 16)
 # print(tuple_three_vals)
 
@@ -378,9 +380,11 @@ class Struct:
 
             if check == True:
                 Struct._check_arg_list(arg_list)
-            types = Struct._convert_recursive_objects(arg_list)
+
+            types = Struct._convert_arg_format(arg_list)
             self._type_list = arg_list
             self._type_tree = types
+
         except UnknownTypeArgument as e:
             traceback.print_stack()
             print(f"\nUnknown type: '{e.args[0]}' provided in struct assignment.\n")
@@ -389,6 +393,9 @@ class Struct:
             print(
                 f"\nInvalid attribute name: '{e.args[0]}' provided in struct assignment."
             )
+        except Exception as e:
+            traceback.print_stack()
+            print(f"\nCannot assign type: {type(e.args[0])} to struct. ({e.args[0]})\n")
 
     @staticmethod
     def _check_arg_list(__list):
@@ -407,58 +414,47 @@ class Struct:
                 raise UnknownTypeArgument(arg)
 
     @staticmethod
+    def _convert_arg_format(__list):
+        buf = []
+        for arg in __list:
+            if type(arg) is not dict:
+                buf.append(arg)
+                pass
+            buf.extend([(x, y) for x, y in arg.items()])
+        return buf
+
+    @staticmethod
     def _check_arg_type(__arg):
-        if type(__arg) is dict:
-            Struct._check_arg_list([__arg])
-            return
-        elif type(__arg) is Struct:
+        if type(__arg) is Struct:
             Struct._check_arg_list(__arg._type_tree)
             return
         elif type(__arg) is Tuple:
             Tuple._check_arg_list(__arg._type_tree)
             return
-        elif type(__arg) is tuple:
-            Struct._check_arg_type(__arg[-1])
-            return
         elif type(__arg) is str:
-            if not PTypes._member_names_.__contains__(__arg):
+            if not RTypes._member_names_.__contains__(__arg):
                 raise UnknownTypeArgument(__arg)
             return
-        elif type(__arg) is not PTypes:
+        elif type(__arg) is not RTypes:
             raise UnknownTypeArgument(__arg)
-
-    @staticmethod
-    def _convert_recursive_objects(__list):
-        # print(f"{__list}, {type(__list)}, {type(__list) is tuple}")
-        if len(__list) == 0:
-            return __list
-        if type(__list[0]) is PTypes or type(__list[0]) is str:
-            return __list[0]
-        if isinstance(__list[0], tuple):
-            return [
-                (__list[0][0], Struct._convert_recursive_objects([__list[0][1]]))
-            ] + Struct._convert_recursive_objects(__list[1:])
-        if isinstance(__list[0], dict):
-            return [
-                (x, Struct._convert_recursive_objects([y]))
-                for x, y in __list[0].items()
-            ] + Struct._convert_recursive_objects(__list[1:])
-
-        return __list[:1] + Struct._convert_recursive_objects(__list[1:])
+        return
 
     def get_types(self) -> list[str]:
         return self._type_tree
 
-    def __str__(self):
-        buf = [str(x) for x in self._type_tree]
-        return f"[{', '.join(buf)}]"
+    def __str__(self, __formatter: Formatter = default_formatter):
+        buf = [
+            f"{__formatter._indent_spaces*' '}{str(x)}: {str(y) if type(y) is not RTypes else str(y.value)},\n"
+            for x, y in self._type_tree
+        ]
+        return "{{\n{0}}}".format(f"".join(buf))
 
 
-struct_one = Struct({"A": "u8", "B": {"C": "u16", "D": "u8"}})
+struct_one = Struct({"A": "u8", "B": "u16"})
 print(struct_one)
 
-struct_two = Struct({"A": PTypes.u16, "B": PTypes.str})
+struct_two = Struct({"A": RTypes.u16, "B": RTypes.str})
 print(struct_two)
 
-struct_three = Struct(("A", PTypes.u8), ("B", "u8"), ("C", ("D", "u16")))
+struct_three = Struct(("A", RTypes.u8), ("B", "u8"), ("C", struct_two))
 print(struct_three)
