@@ -21,6 +21,9 @@ class IncorrectArgCount(Exception):
 class InvalidStructAttributeName(Exception):
     pass
 
+class InvalidName(Exception):
+    pass
+
 
 class _PrimitiveType_(ABC):
     def __init__(self, __display_form: str) -> None:
@@ -372,19 +375,28 @@ class Tuple:
 
 class Struct:
     def __init__(
-        self, *args: _PrimitiveType_ | list[_PrimitiveType_], **kwargs
+        self, *args: _PrimitiveType_ | list[_PrimitiveType_], **kwargs: name
     ) -> Struct:
         try:
             check = kwargs.get("check") if type(kwargs.get("check")) is bool else True
+            name = kwargs.get("name")
+            if name is None:
+                raise InvalidName
+            
             arg_list = list(args)
 
             if check == True:
                 Struct._check_arg_list(arg_list)
 
             types = Struct._convert_arg_format(arg_list)
+
             self._type_list = arg_list
             self._type_tree = types
+            self._name = name
 
+        except InvalidName as e:
+            traceback.print_stack()
+            print(f"\nInvalid or no 'name' argument provided in struct assignment.\n")
         except UnknownTypeArgument as e:
             traceback.print_stack()
             print(f"\nUnknown type: '{e.args[0]}' provided in struct assignment.\n")
@@ -434,32 +446,35 @@ class Struct:
         buf = []
         for arg in __list:
             if type(arg) is dict:
-                print("1")
                 buf.extend([(x, y) for x, y in arg.items()])
                 pass
-            elif type(arg) is Struct:
-                print("STRUCT MODE")
             else:
                 buf.append(arg)
-        print(buf)
         return buf
 
     def get_types(self) -> list[str]:
         return self._type_tree
 
+    def get_name(self) -> str:
+        return self._name
+
     def __str__(self, __formatter: Formatter = default_formatter):
-        buf = [
-            f"{__formatter._indent_spaces*' '}{str(x)}: {str(y) if type(y) is not RTypes else str(y.value)},\n"
-            for x, y in self._type_tree
-        ]
-        return "{{\n{0}}}".format(f"".join(buf))
+        buf = []
+        for x, y in self._type_tree:
+            type_text = y
+            if type(y) is RTypes:
+                type_text = str(y.value) 
+            elif type(y) is Struct:
+                type_text = y.get_name()
+            buf.append(f"{__formatter._indent_spaces*' '}{str(x)}: {str(type_text)}")
+        return "struct {0} {{\n{1}\n}}".format(self._name,f",\n".join(buf))
 
 
-struct_one = Struct({"A": "u8", "B": "u16"})
+struct_one = Struct({"A": "u8", "B": "u16"}, name="struct_one")
 print(struct_one)
 
-struct_two = Struct({"A": RTypes.u16, "B": RTypes.str}, {"C": RTypes.i8})
+struct_two = Struct({"A": RTypes.u16, "B": RTypes.str}, {"C": RTypes.i8}, name="struct_two")
 print(struct_two)
 
-struct_three = Struct(("A", RTypes.u8), ("B", "u8"), ("C", struct_two))
+struct_three = Struct(("A", RTypes.u8), ("B", "u8"), ("C", struct_two), name="struct_three")
 print(struct_three)
