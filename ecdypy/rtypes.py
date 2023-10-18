@@ -414,16 +414,6 @@ class Struct:
                 raise UnknownTypeArgument(arg)
 
     @staticmethod
-    def _convert_arg_format(__list):
-        buf = []
-        for arg in __list:
-            if type(arg) is not dict:
-                buf.append(arg)
-                pass
-            buf.extend([(x, y) for x, y in arg.items()])
-        return buf
-
-    @staticmethod
     def _check_arg_type(__arg):
         if type(__arg) is Struct:
             Struct._check_arg_list(__arg._type_tree)
@@ -439,6 +429,21 @@ class Struct:
             raise UnknownTypeArgument(__arg)
         return
 
+    @staticmethod
+    def _convert_arg_format(__list):
+        buf = []
+        for arg in __list:
+            if type(arg) is dict:
+                print("1")
+                buf.extend([(x, y) for x, y in arg.items()])
+                pass
+            elif type(arg) is Struct:
+                print("STRUCT MODE")
+            else:
+                buf.append(arg)
+        print(buf)
+        return buf
+
     def get_types(self) -> list[str]:
         return self._type_tree
 
@@ -453,7 +458,7 @@ class Struct:
 struct_one = Struct({"A": "u8", "B": "u16"})
 print(struct_one)
 
-struct_two = Struct({"A": RTypes.u16, "B": RTypes.str})
+struct_two = Struct({"A": RTypes.u16, "B": RTypes.str}, {"C": RTypes.i8})
 print(struct_two)
 
 struct_three = Struct(("A", RTypes.u8), ("B", "u8"), ("C", struct_two))
