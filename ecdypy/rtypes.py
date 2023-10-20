@@ -21,6 +21,7 @@ class IncorrectArgCount(Exception):
 class InvalidStructAttributeName(Exception):
     pass
 
+
 class InvalidName(Exception):
     pass
 
@@ -255,6 +256,13 @@ class RTypes(Enum):
 # ==============================================================================================
 
 
+def normalize_arg_type(__type):
+    new = __type
+    if RTypes._member_names_.__contains__(__type):
+        new = RTypes[__type]
+    return new
+
+
 class Tuple:
     def __init__(
         self, *args: _PrimitiveType_ | list[_PrimitiveType_], **kwargs
@@ -298,6 +306,7 @@ class Tuple:
             return Tuple._convert_recursive_objects(
                 __list[0]
             ) + Tuple._convert_recursive_objects(__list[1:])
+        __list[0] = normalize_arg_type(__list[0])
         return __list[:1] + Tuple._convert_recursive_objects(__list[1:])
 
     @staticmethod
@@ -359,14 +368,15 @@ class Tuple:
         return f"({', '.join(buf)})"
 
 
-# tuple_one = Tuple(["u8", "u64", ["u16", "u32"]], "u128", ("u16", "u16"), check=True)
-# tuple_one_vals = tuple_one.value_from(1, 1, 2, 3, 4, (5, 6))
+tuple_one = Tuple(["u8", "u64", ["u16", "u32"]], "u128", ("u16", "u16"), check=True)
+tuple_one_vals = tuple_one.value_from(1, 1, 2, 3, 4, (5, 6))
 
-# tuple_two = Tuple(("u16", "u8", "char", ("u16", "u8")), "char", check=True)
-# tuple_two_vals = tuple_two.value_from((1, 1, "c", (1, 1)), "d")
+tuple_two = Tuple(("u16", "u8", "char", ("u16", "u8")), "char", check=True)
+tuple_two_vals = tuple_two.value_from((1, 1, "c", (1, 1)), "d")
 
-# tuple_three = Tuple(RTypes.u8, RTypes.u16)
-# tuple_three_vals = tuple_three.value_from(16, 16)
+tuple_three = Tuple(RTypes.u8, RTypes.u16)
+# print(tuple_three)
+tuple_three_vals = tuple_three.value_from(16, 16)
 # print(tuple_three_vals)
 
 # ==============================================================================================
@@ -382,13 +392,14 @@ class Struct:
             name = kwargs.get("name")
             if name is None:
                 raise InvalidName
-            
+
             arg_list = list(args)
 
             if check == True:
                 Struct._check_arg_list(arg_list)
 
             types = Struct._convert_arg_format(arg_list)
+            types = Struct._normalize_args(types)
 
             self._type_list = arg_list
             self._type_tree = types
@@ -433,6 +444,10 @@ class Struct:
         elif type(__arg) is Tuple:
             Tuple._check_arg_list(__arg._type_tree)
             return
+        elif type(__arg) is tuple:
+            for x in list(__arg):
+                Struct._check_arg_type(x)
+            return
         elif type(__arg) is str:
             if not RTypes._member_names_.__contains__(__arg):
                 raise UnknownTypeArgument(__arg)
@@ -452,6 +467,17 @@ class Struct:
                 buf.append(arg)
         return buf
 
+    @staticmethod
+    def _normalize_args(__list):
+        buf = []
+        for arg in __list:
+            if type(arg[1]) is tuple:
+                value = f"({','.join([str(normalize_arg_type(x)) for x in arg[1]])})"
+                buf.append((arg[0], value))
+            else:
+                buf.append((arg[0], normalize_arg_type(arg[1])))
+        return buf
+
     def get_types(self) -> list[str]:
         return self._type_tree
 
@@ -463,18 +489,27 @@ class Struct:
         for x, y in self._type_tree:
             type_text = y
             if type(y) is RTypes:
-                type_text = str(y.value) 
+                type_text = str(y.value)
             elif type(y) is Struct:
                 type_text = y.get_name()
+
             buf.append(f"{__formatter._indent_spaces*' '}{str(x)}: {str(type_text)}")
-        return "struct {0} {{\n{1}\n}}".format(self._name,f",\n".join(buf))
+        return "struct {0} {{\n{1}\n}}".format(self._name, f",\n".join(buf))
 
 
 struct_one = Struct({"A": "u8", "B": "u16"}, name="struct_one")
 print(struct_one)
 
-struct_two = Struct({"A": RTypes.u16, "B": RTypes.str}, {"C": RTypes.i8}, name="struct_two")
+struct_two = Struct(
+    {"A": RTypes.u16, "B": RTypes.str}, {"C": RTypes.i8}, name="struct_two"
+)
 print(struct_two)
 
-struct_three = Struct(("A", RTypes.u8), ("B", "u8"), ("C", struct_two), name="struct_three")
+struct_three = Struct(
+    ("A", RTypes.u8),
+    ("B", "u8"),
+    ("C", struct_two),
+    ("D", ("u8", RTypes.u8)),
+    name="struct_three",
+)
 print(struct_three)
