@@ -26,7 +26,7 @@ class InvalidName(Exception):
     pass
 
 
-class _PrimitiveType_(ABC):
+class _TYPE_(ABC):
     def __init__(self, __display_form: str) -> None:
         try:
             self._display_form = __display_form
@@ -46,7 +46,7 @@ class _PrimitiveType_(ABC):
         pass
 
 
-class _NUMBER_(_PrimitiveType_):
+class _NUMBER_(_TYPE_):
     def value_from(self, __value):
         try:
             if self.is_ok(__value):
@@ -153,7 +153,7 @@ class _F64_(_NUMBER_):
         )
 
 
-class _BOOLEAN_(_PrimitiveType_):
+class _BOOLEAN_(_TYPE_):
     def value_from(self, __value: bool | int | str) -> str:
         try:
             if not self.is_ok(__value):
@@ -181,7 +181,7 @@ class _BOOLEAN_(_PrimitiveType_):
         return self._display_form
 
 
-class _STR_(_PrimitiveType_):
+class _STR_(_TYPE_):
     def value_from(self, __value: str | int | bool) -> str:
         return str(__value)
 
@@ -193,7 +193,7 @@ class _STR_(_PrimitiveType_):
         return self._display_form
 
 
-class _CHAR_(_PrimitiveType_):
+class _CHAR_(_TYPE_):
     """
     Valid Integer Values under: https://www.unicode.org/glossary/#unicode_scalar_value
     """
@@ -263,10 +263,8 @@ def normalize_arg_type(__type):
     return new
 
 
-class Tuple:
-    def __init__(
-        self, *args: _PrimitiveType_ | list[_PrimitiveType_], **kwargs
-    ) -> self:
+class Tuple(_TYPE_):
+    def __init__(self, *args: _TYPE_ | list[_TYPE_], **kwargs) -> self:
         try:
             check = kwargs.get("check") if type(kwargs.get("check")) is bool else True
             arg_list = Tuple._flatten_args(list(args))
@@ -327,25 +325,40 @@ class Tuple:
             )
         return __list[:1] + Tuple._flatten_args(__list[1:])
 
-    def value_from(self, *args: _PrimitiveType_, **kwargs):
-        try:
-            arg_vals = list(args) if kwargs.get("l") == None else list(kwargs.get("l"))
+    def is_ok(self, *args: _TYPE_) -> bool:
+        arg_vals = list(args)
+        if (x := self.get_types_count()) != (
+            y := len(Tuple._flatten_args(list(arg_vals)))
+        ):
+            return False
+        if len(self._verify_vals(arg_vals)) != len(arg_vals):
+            return False
+        return True
 
+    def _verify_vals(self, __args, __make_list: bool = False) -> list[_TYPE_]:
+        if __make_list == True:
+            __args = list(__args)
+
+        out_vals = []
+        for i, type_item in enumerate(self._type_tree):
+            if type(type_item) is Tuple:
+                out_vals.append(type_item._verify_vals(__args[i], True))
+            elif type(type_item) is RTypes:
+                out_vals.append(type_item.value.value_from(__args[i]))
+            else:
+                out_vals.append(RTypes[type_item].value.value_from(__args[i]))
+        return tuple(out_vals)
+
+    def value_from(self, *args: _TYPE_, **kwargs) -> tuple:
+        try:
+            arg_vals = list(args)
             out_vals = []
             if (x := self.get_types_count()) != (
                 y := len(Tuple._flatten_args(list(arg_vals)))
             ):
                 raise IncorrectArgCount
 
-            for i, type_item in enumerate(self._type_tree):
-                if type(type_item) is Tuple:
-                    out_vals.append(type_item.value_from(l=arg_vals[i]))
-                elif type(type_item) is RTypes:
-                    out_vals.append(type_item.value.value_from(arg_vals[i]))
-                else:
-                    out_vals.append(RTypes[type_item].value.value_from(arg_vals[i]))
-
-            return tuple(out_vals)
+            return tuple(self._verify_vals(arg_vals))
 
         except IncorrectArgCount as e:
             traceback.print_stack()
@@ -371,6 +384,8 @@ class Tuple:
 tuple_one = Tuple(["u8", "u64", ["u16", "u32"]], "u128", ("u16", "u16"), check=True)
 tuple_one_vals = tuple_one.value_from(1, 1, 2, 3, 4, (5, 6))
 
+print(tuple_one.is_ok(1, 1, 2, 3, 4, (5, 6)))
+
 tuple_two = Tuple(("u16", "u8", "char", ("u16", "u8")), "char", check=True)
 tuple_two_vals = tuple_two.value_from((1, 1, "c", (1, 1)), "d")
 
@@ -383,10 +398,8 @@ tuple_three_vals = tuple_three.value_from(16, 16)
 # ==============================================================================================
 
 
-class Struct:
-    def __init__(
-        self, *args: _PrimitiveType_ | list[_PrimitiveType_], **kwargs: name
-    ) -> Struct:
+class Struct(_TYPE_):
+    def __init__(self, *args: _TYPE_ | list[_TYPE_], **kwargs: name) -> Struct:
         try:
             check = kwargs.get("check") if type(kwargs.get("check")) is bool else True
             name = kwargs.get("name")
@@ -477,6 +490,12 @@ class Struct:
             else:
                 buf.append((arg[0], normalize_arg_type(arg[1])))
         return buf
+
+    def is_ok(self, __value):
+        pass
+
+    def value_from(self, __value):
+        pass
 
     def get_types(self) -> list[str]:
         return self._type_tree
