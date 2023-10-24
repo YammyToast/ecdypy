@@ -531,6 +531,18 @@ class Struct(_TYPE_, _DECLARABLE_):
                 raise AttributesNotSatisfied(tree_ids)
 
             return True
+        except Exception as e:
+            traceback.print_stack()
+            print(e)
+        return False
+
+    def value_from(self, *args: _TYPE_):
+        try:
+            arg_vals = Struct._convert_arg_format(list(args))
+            print(arg_vals)
+        except IncorrectArgCount as e:
+            traceback.print_stack()
+            print(f"\nInvalid number of args given: {y} ({x} required).\n")
         except UnknownArgKey as e:
             traceback.print_stack()
             print(f"Unknown Key: '{e.args[0]}\ provided. ({list(args)})'")
@@ -545,16 +557,7 @@ class Struct(_TYPE_, _DECLARABLE_):
             )
             raise e
         except Exception as e:
-            traceback.print_stack()
-            print(e)
-        return False
-    def value_from(self, *args: _TYPE_):
-        try:
-            arg_vals = Struct._convert_arg_format(list(args))
-            print(arg_vals)
-        except IncorrectArgCount as e:
-            traceback.print_stack()
-            print(f"\nInvalid number of args given: {y} ({x} required).\n")
+            raise e
 
     def get_types(self) -> list[str]:
         return self._type_tree
@@ -581,13 +584,14 @@ class Struct(_TYPE_, _DECLARABLE_):
 
 struct_one = Struct({"A": "u8", "B": "u16"}, name="struct_one")
 # print(struct_one)
-print(struct_one.is_ok({"A": 16, "B": 16}))
+# print(struct_one.is_ok({"A": 16, "B": 16}))
+print(struct_one.value_from({"A": 16, "B": 16}))
 
 struct_two = Struct(
     {"A": RTypes.u16, "B": RTypes.str}, {"C": RTypes.i8}, name="struct_two"
 )
 # print(struct_two)
-print(struct_two.is_ok({"A": 32, "B": "Burger", "C": -10}))
+# print(struct_two.is_ok({"A": 32, "B": "Burger", "C": -10}))
 
 struct_three = Struct(
     ("A", RTypes.u8),
