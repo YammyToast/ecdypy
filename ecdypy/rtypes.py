@@ -540,12 +540,14 @@ class Struct(_TYPE_, _DECLARABLE_):
                 f"Attributes with keys: {e.args[0]} not satisfied by input values. ({list(args)})"
             )
         except TypeError as e:
-            print(f"Could not assign value: {e.args[1]} to type {check_type}. ")
+            print(
+                f"Could not assign value: {e.args[1]} to type {e.args[3]}. Arg: ({e.args[0]}:{e.args[1]}) into ({e.args[2]}:{e.args[3]}) "
+            )
             raise e
         except Exception as e:
             traceback.print_stack()
             print(e)
-
+        return False
     def value_from(self, *args: _TYPE_):
         try:
             arg_vals = Struct._convert_arg_format(list(args))
