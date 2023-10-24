@@ -507,39 +507,38 @@ class Struct(_TYPE_, _DECLARABLE_):
                 buf.append((arg[0], normalize_arg_type(arg[1])))
         return buf
 
-    @staticmethod
-    def _flatten_args(__list):
-        print(__list)
 
-    def is_ok(self, *args: _TYPE_):
+    def is_ok(self, *args: _TYPE_, **kwargs):
         try:
             arg_vals = Struct._convert_arg_format(list(args))
-            arg_ids = [x[0] for x in arg_vals]
-            arg_values = [x[1] for x in arg_vals]
-            tree_ids = [x[0] for x in self._type_tree]
-            tree_types = [x[1] for x in self._type_tree]
-            # Deep copy or else lists share pointer.
-            satisy_list = copy.deepcopy(tree_ids)
-            for i, arg in enumerate(arg_ids):
-                if arg not in tree_ids:
-                    raise UnknownArgKey(arg)
-                satisy_list.remove(arg)
-                check_type = tree_types[x := tree_ids.index(arg)]
-                if not check_type.value.is_ok(arg_values[i]):
-                    raise TypeError(arg, arg_values[i], x, check_type)
-            if len(satisy_list) > 0:
-                raise AttributesNotSatisfied(tree_ids)
-
+            self._verify_vals(arg_vals)
             return True
         except Exception as e:
-            traceback.print_stack()
-            print(e)
+            raise e
         return False
+
+    def _verify_vals(self, __args: list):
+        arg_vals = __args[0]
+        arg_ids = [x[0] for x in arg_vals]
+        arg_values = [x[1] for x in arg_vals]
+        tree_ids = [x[0] for x in self._type_tree]
+        tree_types = [x[1] for x in self._type_tree]
+        # Deep copy or else lists share pointer.
+        satisy_list = copy.deepcopy(tree_ids)
+        for i, arg in enumerate(arg_ids):
+            if arg not in tree_ids:
+                raise UnknownArgKey(arg)
+            satisy_list.remove(arg)
+            check_type = tree_types[x := tree_ids.index(arg)]
+            if not check_type.value.is_ok(arg_values[i]):
+                raise TypeError(arg, arg_values[i], x, check_type)
+        if len(satisy_list) > 0:
+            raise AttributesNotSatisfied(tree_ids)
 
     def value_from(self, *args: _TYPE_):
         try:
             arg_vals = Struct._convert_arg_format(list(args))
-            print(arg_vals)
+            self.is_ok(arg_vals)
         except IncorrectArgCount as e:
             traceback.print_stack()
             print(f"\nInvalid number of args given: {y} ({x} required).\n")
