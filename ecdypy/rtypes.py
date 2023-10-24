@@ -14,11 +14,14 @@ import copy
 class UnknownTypeArgument(Exception):
     pass
 
+
 class UnknownArgKey(Exception):
     pass
 
+
 class AttributesNotSatisfied(Exception):
     pass
+
 
 class IncorrectArgCount(Exception):
     pass
@@ -515,24 +518,30 @@ class Struct(_TYPE_, _DECLARABLE_):
             arg_values = [x[1] for x in arg_vals]
             tree_ids = [x[0] for x in self._type_tree]
             tree_types = [x[1] for x in self._type_tree]
+            # Deep copy or else lists share pointer.
             satisy_list = copy.deepcopy(tree_ids)
             for i, arg in enumerate(arg_ids):
                 if arg not in tree_ids:
                     raise UnknownArgKey(arg)
                 satisy_list.remove(arg)
-                print("Y", tree_ids.index(arg))
-
+                check_type = tree_types[x := tree_ids.index(arg)]
+                if not check_type.value.is_ok(arg_values[i]):
+                    raise TypeError(arg, arg_values[i], x, check_type)
             if len(satisy_list) > 0:
                 raise AttributesNotSatisfied(tree_ids)
 
-                        
             return True
         except UnknownArgKey as e:
             traceback.print_stack()
-            print(f"Unknown Key: \'{e.args[0]}\ provided. ({list(args)})'")
+            print(f"Unknown Key: '{e.args[0]}\ provided. ({list(args)})'")
         except AttributesNotSatisfied as e:
             traceback.print_stack()
-            print(f"Attributes with keys: {e.args[0]} not satisfied by input values. ({list(args)})")
+            print(
+                f"Attributes with keys: {e.args[0]} not satisfied by input values. ({list(args)})"
+            )
+        except TypeError as e:
+            print(f"Could not assign value: {e.args[1]} to type {check_type}. ")
+            raise e
         except Exception as e:
             traceback.print_stack()
             print(e)
