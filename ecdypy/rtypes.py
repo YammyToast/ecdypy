@@ -8,11 +8,17 @@ import traceback
 from codewriter import default_formatter
 
 import re
+import copy
 
 
 class UnknownTypeArgument(Exception):
     pass
 
+class UnknownArgKey(Exception):
+    pass
+
+class AttributesNotSatisfied(Exception):
+    pass
 
 class IncorrectArgCount(Exception):
     pass
@@ -44,6 +50,19 @@ class _TYPE_(ABC):
     @abstractmethod
     def __str__(self):
         pass
+
+
+class _DECLARABLE_(ABC):
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def get_declaration(self, __formatter: Formatter = default_formatter):
+        pass
+
+
+# ==============================================================================================
+# ==============================================================================================
 
 
 class _NUMBER_(_TYPE_):
@@ -327,9 +346,7 @@ class Tuple(_TYPE_):
 
     def is_ok(self, *args: _TYPE_) -> bool:
         arg_vals = list(args)
-        if (x := self.get_types_count()) != (
-            y := len(Tuple._flatten_args(list(arg_vals)))
-        ):
+        if (self.get_types_count()) != (len(Tuple._flatten_args(list(arg_vals)))):
             return False
         if len(self._verify_vals(arg_vals)) != len(arg_vals):
             return False
@@ -384,21 +401,17 @@ class Tuple(_TYPE_):
 tuple_one = Tuple(["u8", "u64", ["u16", "u32"]], "u128", ("u16", "u16"), check=True)
 tuple_one_vals = tuple_one.value_from(1, 1, 2, 3, 4, (5, 6))
 
-print(tuple_one.is_ok(1, 1, 2, 3, 4, (5, 6)))
-
 tuple_two = Tuple(("u16", "u8", "char", ("u16", "u8")), "char", check=True)
 tuple_two_vals = tuple_two.value_from((1, 1, "c", (1, 1)), "d")
 
 tuple_three = Tuple(RTypes.u8, RTypes.u16)
-# print(tuple_three)
 tuple_three_vals = tuple_three.value_from(16, 16)
-# print(tuple_three_vals)
 
 # ==============================================================================================
 # ==============================================================================================
 
 
-class Struct(_TYPE_):
+class Struct(_TYPE_, _DECLARABLE_):
     def __init__(self, *args: _TYPE_ | list[_TYPE_], **kwargs: name) -> Struct:
         try:
             check = kwargs.get("check") if type(kwargs.get("check")) is bool else True
@@ -485,17 +498,52 @@ class Struct(_TYPE_):
         buf = []
         for arg in __list:
             if type(arg[1]) is tuple:
-                value = f"({','.join([str(normalize_arg_type(x)) for x in arg[1]])})"
+                value = tuple([normalize_arg_type(x) for x in arg[1]])
                 buf.append((arg[0], value))
             else:
                 buf.append((arg[0], normalize_arg_type(arg[1])))
         return buf
 
-    def is_ok(self, __value):
-        pass
+    @staticmethod
+    def _flatten_args(__list):
+        print(__list)
 
-    def value_from(self, __value):
-        pass
+    def is_ok(self, *args: _TYPE_):
+        try:
+            arg_vals = Struct._convert_arg_format(list(args))
+            arg_ids = [x[0] for x in arg_vals]
+            arg_values = [x[1] for x in arg_vals]
+            tree_ids = [x[0] for x in self._type_tree]
+            tree_types = [x[1] for x in self._type_tree]
+            satisy_list = copy.deepcopy(tree_ids)
+            for i, arg in enumerate(arg_ids):
+                if arg not in tree_ids:
+                    raise UnknownArgKey(arg)
+                satisy_list.remove(arg)
+                print("Y", tree_ids.index(arg))
+
+            if len(satisy_list) > 0:
+                raise AttributesNotSatisfied(tree_ids)
+
+                        
+            return True
+        except UnknownArgKey as e:
+            traceback.print_stack()
+            print(f"Unknown Key: \'{e.args[0]}\ provided. ({list(args)})'")
+        except AttributesNotSatisfied as e:
+            traceback.print_stack()
+            print(f"Attributes with keys: {e.args[0]} not satisfied by input values. ({list(args)})")
+        except Exception as e:
+            traceback.print_stack()
+            print(e)
+
+    def value_from(self, *args: _TYPE_):
+        try:
+            arg_vals = Struct._convert_arg_format(list(args))
+            print(arg_vals)
+        except IncorrectArgCount as e:
+            traceback.print_stack()
+            print(f"\nInvalid number of args given: {y} ({x} required).\n")
 
     def get_types(self) -> list[str]:
         return self._type_tree
@@ -503,7 +551,7 @@ class Struct(_TYPE_):
     def get_name(self) -> str:
         return self._name
 
-    def __str__(self, __formatter: Formatter = default_formatter):
+    def get_declaration(self, __formatter: Formatter = default_formatter) -> str:
         buf = []
         for x, y in self._type_tree:
             type_text = y
@@ -511,18 +559,24 @@ class Struct(_TYPE_):
                 type_text = str(y.value)
             elif type(y) is Struct:
                 type_text = y.get_name()
-
+            elif type(y) is tuple:
+                type_text = f"({','.join([str(z.value) for z in y])})"
             buf.append(f"{__formatter._indent_spaces*' '}{str(x)}: {str(type_text)}")
         return "struct {0} {{\n{1}\n}}".format(self._name, f",\n".join(buf))
 
+    def __str__(self, __formatter: Formatter = default_formatter) -> str:
+        return self.get_name()
+
 
 struct_one = Struct({"A": "u8", "B": "u16"}, name="struct_one")
-print(struct_one)
+# print(struct_one)
+print(struct_one.is_ok({"A": 16, "B": 16}))
 
 struct_two = Struct(
     {"A": RTypes.u16, "B": RTypes.str}, {"C": RTypes.i8}, name="struct_two"
 )
-print(struct_two)
+# print(struct_two)
+print(struct_two.is_ok({"A": 32, "B": "Burger", "C": -10}))
 
 struct_three = Struct(
     ("A", RTypes.u8),
@@ -531,4 +585,6 @@ struct_three = Struct(
     ("D", ("u8", RTypes.u8)),
     name="struct_three",
 )
-print(struct_three)
+# print(struct_three.is_ok({"A": 8, "B": 8, }))
+
+# print(struct_three.get_declaration())
