@@ -15,7 +15,7 @@ class UnknownTypeArgument(Exception):
     pass
 
 
-class UnknownArgKey(Exception):
+class UnknownArgKeys(Exception):
     pass
 
 
@@ -507,42 +507,51 @@ class Struct(_TYPE_, _DECLARABLE_):
                 buf.append((arg[0], normalize_arg_type(arg[1])))
         return buf
 
-
     def is_ok(self, *args: _TYPE_, **kwargs):
         try:
             arg_vals = Struct._convert_arg_format(list(args))
-            self._verify_vals(arg_vals)
+            if len(arg_vals) != len(self._type_tree): 
+                return False
+            out = self._verify_vals(arg_vals)
+            if out[0] != arg_vals or len(out[1]) > 0:
+                return False
             return True
         except Exception as e:
             raise e
-        return False
+
 
     def _verify_vals(self, __args: list):
-        arg_vals = __args[0]
+        arg_vals = __args
         arg_ids = [x[0] for x in arg_vals]
         arg_values = [x[1] for x in arg_vals]
         tree_ids = [x[0] for x in self._type_tree]
         tree_types = [x[1] for x in self._type_tree]
         # Deep copy or else lists share pointer.
         satisy_list = copy.deepcopy(tree_ids)
+        seen_list = []
+        out_vals = []
         for i, arg in enumerate(arg_ids):
-            if arg not in tree_ids:
-                raise UnknownArgKey(arg)
+            if arg in seen_list:
+                pass
+            seen_list.append(arg)
+            if not arg in tree_ids:
+                pass
             satisy_list.remove(arg)
-            check_type = tree_types[x := tree_ids.index(arg)]
-            if not check_type.value.is_ok(arg_values[i]):
-                raise TypeError(arg, arg_values[i], x, check_type)
-        if len(satisy_list) > 0:
-            raise AttributesNotSatisfied(tree_ids)
+            target_type = tree_types[tree_ids.index(arg)]
+            out_vals.append((arg, target_type.value.value_from(arg_values[i])))            
+        return out_vals, satisy_list
 
     def value_from(self, *args: _TYPE_):
         try:
             arg_vals = Struct._convert_arg_format(list(args))
-            self.is_ok(arg_vals)
-        except IncorrectArgCount as e:
-            traceback.print_stack()
-            print(f"\nInvalid number of args given: {y} ({x} required).\n")
-        except UnknownArgKey as e:
+            out = self._verify_vals(arg_vals)
+            if len(out[1]) > 0:
+                raise AttributesNotSatisfied(out[1], arg_vals)
+            if len(out[0]) < len(arg_vals):
+                dif = list(set(arg_vals) - set(out[0]))
+                raise UnknownArgKeys(dif)
+            return out[0]            
+        except UnknownArgKeys as e:
             traceback.print_stack()
             print(f"Unknown Key: '{e.args[0]}\ provided. ({list(args)})'")
         except AttributesNotSatisfied as e:
@@ -550,13 +559,6 @@ class Struct(_TYPE_, _DECLARABLE_):
             print(
                 f"Attributes with keys: {e.args[0]} not satisfied by input values. ({list(args)})"
             )
-        except TypeError as e:
-            print(
-                f"Could not assign value: {e.args[1]} to type {e.args[3]}. Arg: ({e.args[0]}:{e.args[1]}) into ({e.args[2]}:{e.args[3]}) "
-            )
-            raise e
-        except Exception as e:
-            raise e
 
     def get_types(self) -> list[str]:
         return self._type_tree
@@ -583,7 +585,7 @@ class Struct(_TYPE_, _DECLARABLE_):
 
 struct_one = Struct({"A": "u8", "B": "u16"}, name="struct_one")
 # print(struct_one)
-# print(struct_one.is_ok({"A": 16, "B": 16}))
+print(struct_one.is_ok({"A": 16, "B": 16}))
 print(struct_one.value_from({"A": 16, "B": 16}))
 
 struct_two = Struct(
