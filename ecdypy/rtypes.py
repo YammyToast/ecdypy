@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 import traceback
 
-from codewriter import default_formatter
+from .codewriter import default_formatter
 
 import re
 import copy
@@ -73,17 +73,19 @@ class _NUMBER_(_TYPE_):
         try:
             if self.is_ok(__value):
                 return int(__value)
-            elif int(__value) < self.min_value:
+            elif int(__value) <= self.min_value:
                 return int(self.min_value)
-            elif int(__value) > self.max_value:
+            elif int(__value) >= self.max_value:
                 return int(self.max_value)
             else:
                 raise
         except Exception:
             print(f"Cannot assign value: {__value} to type {self._display_form}.")
 
-    def is_ok(self, __value: str | int) -> bool:
-        return int(__value) < self.max_value and int(__value) > self.min_value
+    def is_ok(self, __value: int) -> bool:
+        if type(__value) is not int:
+            return False
+        return int(__value) <= self.max_value and int(__value) >= self.min_value
 
     def __str__(self) -> str:
         return self._display_form
@@ -96,7 +98,7 @@ class _U8_(_NUMBER_):
 
 class _I8_(_NUMBER_):
     min_value = -127
-    max_value = 128
+    max_value = 127
 
 
 class _U16_(_NUMBER_):
@@ -553,7 +555,7 @@ class Struct(_TYPE_, _DECLARABLE_):
             return out[0]            
         except UnknownArgKeys as e:
             traceback.print_stack()
-            print(f"Unknown Key: '{e.args[0]}\ provided. ({list(args)})'")
+            print(f"Unknown Key: '{e.args[0]}' provided. ({list(args)})'")
         except AttributesNotSatisfied as e:
             traceback.print_stack()
             print(
@@ -585,8 +587,8 @@ class Struct(_TYPE_, _DECLARABLE_):
 
 struct_one = Struct({"A": "u8", "B": "u16"}, name="struct_one")
 # print(struct_one)
-print(struct_one.is_ok({"A": 16, "B": 16}))
-print(struct_one.value_from({"A": 16, "B": 16}))
+# print(struct_one.is_ok({"A": 16, "B": 16}))
+# print(struct_one.value_from({"A": 16, "B": 16}))
 
 struct_two = Struct(
     {"A": RTypes.u16, "B": RTypes.str}, {"C": RTypes.i8}, name="struct_two"

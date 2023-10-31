@@ -7,7 +7,7 @@ from collections import deque
 from dataclasses import dataclass
 
 
-from _meta import __version__, __source__
+from ._meta import __version__, __source__
 
 
 @dataclass
