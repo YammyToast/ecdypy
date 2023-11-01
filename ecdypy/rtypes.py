@@ -181,22 +181,25 @@ class _BOOLEAN_(_TYPE_):
     def value_from(self, __value: bool | int | str) -> str:
         try:
             if not self.is_ok(__value):
+                print("HERE")
                 raise
-            if re.search(r"^(1|true|True)$", __value):
+            __value = str(__value)
+            if re.search(r"^(1|true|True)$", __value) != None:
                 return "true"
-            elif re.search(r"^(0|false|False)$", __value):
+            elif re.search(r"^(0|false|False)$", __value) != None:
                 return "false"
             else:
                 raise
         except Exception as e:
-            print(f"Cannot assign value: {__value} to type u8.")
+            traceback.print_stack()
+            print(f"Cannot assign value: {__value} to type bool.")
 
     def is_ok(self, __value) -> bool:
         if type(__value) is bool:
             return True
         elif __value == 0 or __value == 1:
             return True
-        elif __value == "true" or __value == "false":
+        elif __value.lower() == "true" or __value.lower() == "false":
             return True
         else:
             return False
@@ -273,7 +276,7 @@ class RTypes(Enum):
     f64 = _F64_("f64")
     bool = _BOOLEAN_("bool")
     str = _STR_("str")
-    char = _CHAR_("")
+    char = _CHAR_("char")
 
 
 # ==============================================================================================
@@ -400,6 +403,12 @@ class Tuple(_TYPE_):
 
     def __str__(self):
         buf = [str(x) for x in self._type_tree]
+        buf = []
+        for x in self._type_tree:
+            if type(x) is RTypes:
+                buf.append(str(x.value))        
+            else:
+                buf.append(str(x))
         return f"({', '.join(buf)})"
 
 
@@ -512,7 +521,7 @@ class Struct(_TYPE_, _DECLARABLE_):
     def is_ok(self, *args: _TYPE_, **kwargs):
         try:
             arg_vals = Struct._convert_arg_format(list(args))
-            if len(arg_vals) != len(self._type_tree): 
+            if len(arg_vals) != len(self._type_tree):
                 return False
             out = self._verify_vals(arg_vals)
             if out[0] != arg_vals or len(out[1]) > 0:
@@ -520,7 +529,6 @@ class Struct(_TYPE_, _DECLARABLE_):
             return True
         except Exception as e:
             raise e
-
 
     def _verify_vals(self, __args: list):
         arg_vals = __args
@@ -540,7 +548,7 @@ class Struct(_TYPE_, _DECLARABLE_):
                 pass
             satisy_list.remove(arg)
             target_type = tree_types[tree_ids.index(arg)]
-            out_vals.append((arg, target_type.value.value_from(arg_values[i])))            
+            out_vals.append((arg, target_type.value.value_from(arg_values[i])))
         return out_vals, satisy_list
 
     def value_from(self, *args: _TYPE_):
@@ -552,7 +560,7 @@ class Struct(_TYPE_, _DECLARABLE_):
             if len(out[0]) < len(arg_vals):
                 dif = list(set(arg_vals) - set(out[0]))
                 raise UnknownArgKeys(dif)
-            return out[0]            
+            return out[0]
         except UnknownArgKeys as e:
             traceback.print_stack()
             print(f"Unknown Key: '{e.args[0]}' provided. ({list(args)})'")
