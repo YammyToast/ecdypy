@@ -310,11 +310,10 @@ class Tuple(_TYPE_):
     @staticmethod
     def _check_arg_list(__list):
         for arg in __list:
+            if type(arg) is Tuple:
+                continue
             # why is contains dunder???????
-            if (
-                not (RTypes._member_names_.__contains__(arg) or arg in RTypes)
-                and type(arg) is not Tuple
-            ):
+            if not (RTypes._member_names_.__contains__(arg) or arg in RTypes):
                 raise UnknownTypeArgument(arg)
             if type(arg) is Tuple:
                 Tuple._check_arg_list(arg._type_tree)

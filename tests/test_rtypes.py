@@ -154,14 +154,30 @@ def test_type_i128():
 def test_tuple_basic_assignment():
     tuple_one = Tuple(["u8", "u64", ["u16", "u32"]], "u128", ("u16", "u16"), check=True)
     assert str(tuple_one) == "(u8, u64, u16, u32, u128, (u16, u16))"
-
     tuple_one_vals = tuple_one.value_from(1, 1, 2, 3, 4, (5, 6))
     assert tuple_one_vals == (1, 1, 2, 3, 4, (5, 6))
 
     tuple_two = Tuple(("u16", "u8", "char", ("u16", "u8")), "bool", check=True)
-    print(tuple_two)
+    assert str(tuple_two) == "((u16, u8, char, (u16, u8)), bool)"
     tuple_two_vals = tuple_two.value_from((1, 1, "c", (1, 1)), 1)
-    print(tuple_two_vals)
+    assert tuple_two_vals == ((1, 1, 'c', (1, 1)), 'true')
 
     tuple_three = Tuple(RTypes.u8, RTypes.u16)
+    assert str(tuple_three) == "(u8, u16)"
     tuple_three_vals = tuple_three.value_from(16, 16)
+    assert tuple_three_vals == (16, 16)
+
+def test_tuple_compound_assignment():
+    tuple_one = Tuple(RTypes.u8, RTypes.char)
+    assert str(tuple_one) == "(u8, char)"
+
+    tuple_two = Tuple(tuple_one, RTypes.i16)
+    assert str(tuple_two) == "((u8, char), i16)"
+    print(tuple_two)
+
+    tuple_three = Tuple(tuple_one, tuple_two, RTypes.u8)
+    assert str(tuple_three) == "((u8, char), ((u8, char), i16), u8)"
+
+    assert tuple_one.value_from(8, "A") == (8, 'A')
+    assert tuple_two.value_from((8, "A"), -10) == ((8, 'A'), -10)
+    assert tuple_three.value_from((8, "A"), ((8, "A"), -10), 8)
