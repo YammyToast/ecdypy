@@ -1,11 +1,12 @@
 from pathlib import Path
 import sys
 import os
+import re
 
 import pytest
 import warnings
 
-from ecdypy.rtypes import RTypes, Tuple
+from ecdypy.rtypes import RTypes, Tuple, Struct
 
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
@@ -151,6 +152,7 @@ def test_type_i128():
 # ==============================================================================================
 # ==============================================================================================
 
+
 def test_tuple_basic_assignment():
     tuple_one = Tuple(["u8", "u64", ["u16", "u32"]], "u128", ("u16", "u16"), check=True)
     assert str(tuple_one) == "(u8, u64, u16, u32, u128, (u16, u16))"
@@ -160,12 +162,13 @@ def test_tuple_basic_assignment():
     tuple_two = Tuple(("u16", "u8", "char", ("u16", "u8")), "bool", check=True)
     assert str(tuple_two) == "((u16, u8, char, (u16, u8)), bool)"
     tuple_two_vals = tuple_two.value_from((1, 1, "c", (1, 1)), 1)
-    assert tuple_two_vals == ((1, 1, 'c', (1, 1)), 'true')
+    assert tuple_two_vals == ((1, 1, "c", (1, 1)), "true")
 
     tuple_three = Tuple(RTypes.u8, RTypes.u16)
     assert str(tuple_three) == "(u8, u16)"
     tuple_three_vals = tuple_three.value_from(16, 16)
     assert tuple_three_vals == (16, 16)
+
 
 def test_tuple_compound_assignment():
     tuple_one = Tuple(RTypes.u8, RTypes.char)
@@ -173,11 +176,44 @@ def test_tuple_compound_assignment():
 
     tuple_two = Tuple(tuple_one, RTypes.i16)
     assert str(tuple_two) == "((u8, char), i16)"
-    print(tuple_two)
 
     tuple_three = Tuple(tuple_one, tuple_two, RTypes.u8)
     assert str(tuple_three) == "((u8, char), ((u8, char), i16), u8)"
 
-    assert tuple_one.value_from(8, "A") == (8, 'A')
-    assert tuple_two.value_from((8, "A"), -10) == ((8, 'A'), -10)
+    assert tuple_one.value_from(8, "A") == (8, "A")
+    assert tuple_two.value_from((8, "A"), -10) == ((8, "A"), -10)
     assert tuple_three.value_from((8, "A"), ((8, "A"), -10), 8)
+
+
+# ==============================================================================================
+# ==============================================================================================
+
+
+def test_struct_basic_assignment():
+    replace_pattern = r"[\n\t\s]*"
+    struct_one = Struct({"A": "u8", "B": "u16"}, name="struct_one")
+    assert str(struct_one) == "struct_one"
+    assert struct_one.is_ok({"A": 16, "B": 16}) == True
+    assert struct_one.value_from({"A": 16, "B": 16}) == [("A", 16), ("B", 16)]
+    one_declaration = re.sub(replace_pattern, "", struct_one.get_declaration())
+    assert one_declaration == r"structstruct_one{A:u8,B:u16}"
+
+    struct_two_name = "struct_two"
+    struct_two = Struct(
+        {"A": RTypes.u16, "B": RTypes.str}, {"C": RTypes.i8}, name=struct_two_name
+    )
+    assert str(struct_two) == "struct_two"
+
+    assert struct_two.is_ok({"A": 32, "B": "Burger", "C": -10}) == True
+    print(struct_two.value_from({"A": 32, "B": "Burger", "C": -10}))
+
+    struct_three = Struct(
+        ("A", RTypes.u8),
+        ("B", "u8"),
+        ("C", struct_two),
+        ("D", ("u8", RTypes.u8)),
+        name="struct_three",
+    )
+    # print(struct_three.is_ok({"A": 8, "B": 8, }))
+
+    # print(struct_three.get_declaration())
