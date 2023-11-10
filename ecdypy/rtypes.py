@@ -289,6 +289,11 @@ def normalize_arg_type(__type):
         new = RTypes[__type]
     return new
 
+def _value_from_list(_type_list, _arg_list):
+    print(_type_list, _arg_list)
+    out = []
+    for t in _type_list:
+        print(t.value)
 
 class Tuple(_TYPE_):
     def __init__(self, *args: _TYPE_ | list[_TYPE_], **kwargs) -> self:
@@ -405,7 +410,7 @@ class Tuple(_TYPE_):
         buf = []
         for x in self._type_tree:
             if type(x) is RTypes:
-                buf.append(str(x.value))        
+                buf.append(str(x.value))
             else:
                 buf.append(str(x))
         return f"({', '.join(buf)})"
@@ -541,13 +546,24 @@ class Struct(_TYPE_, _DECLARABLE_):
         out_vals = []
         for i, arg in enumerate(arg_ids):
             if arg in seen_list:
-                pass
+                continue
             seen_list.append(arg)
             if not arg in tree_ids:
-                pass
+                continue
             satisy_list.remove(arg)
+
             target_type = tree_types[tree_ids.index(arg)]
-            out_vals.append((arg, target_type.value.value_from(arg_values[i])))
+            if type(target_type) is Struct:
+                # print("HEREEE", target_type._verify_vals(arg_values[i]))
+                out = target_type._verify_vals(arg_values[i])
+                if len(out[1]) > 0:
+                    raise AttributesNotSatisfied(out[1], arg_values[i])
+                out_vals.append((arg, target_type))
+            elif type(target_type) is tuple:
+                out = _value_from_list(list(target_type), list(arg_values[i]))
+            else:
+                out_vals.append((arg, target_type.value.value_from(arg_values[i])))
+
         return out_vals, satisy_list
 
     def value_from(self, *args: _TYPE_):
@@ -590,26 +606,3 @@ class Struct(_TYPE_, _DECLARABLE_):
 
     def __str__(self, __formatter: Formatter = default_formatter) -> str:
         return self.get_name()
-
-
-struct_one = Struct({"A": "u8", "B": "u16"}, name="struct_one")
-# print(struct_one)
-# print(struct_one.is_ok({"A": 16, "B": 16}))
-# print(struct_one.value_from({"A": 16, "B": 16}))
-
-struct_two = Struct(
-    {"A": RTypes.u16, "B": RTypes.str}, {"C": RTypes.i8}, name="struct_two"
-)
-# print(struct_two)
-# print(struct_two.is_ok({"A": 32, "B": "Burger", "C": -10}))
-
-struct_three = Struct(
-    ("A", RTypes.u8),
-    ("B", "u8"),
-    ("C", struct_two),
-    ("D", ("u8", RTypes.u8)),
-    name="struct_three",
-)
-# print(struct_three.is_ok({"A": 8, "B": 8, }))
-
-# print(struct_three.get_declaration())
