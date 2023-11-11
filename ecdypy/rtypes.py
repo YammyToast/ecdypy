@@ -419,14 +419,7 @@ class Tuple(_TYPE_):
         return f"({', '.join(buf)})"
 
 
-tuple_one = Tuple(["u8", "u64", ["u16", "u32"]], "u128", ("u16", "u16"), check=True)
-tuple_one_vals = tuple_one.value_from(1, 1, 2, 3, 4, (5, 6))
 
-tuple_two = Tuple(("u16", "u8", "char", ("u16", "u8")), "char", check=True)
-tuple_two_vals = tuple_two.value_from((1, 1, "c", (1, 1)), "d")
-
-tuple_three = Tuple(RTypes.u8, RTypes.u16)
-tuple_three_vals = tuple_three.value_from(16, 16)
 
 # ==============================================================================================
 # ==============================================================================================
@@ -561,7 +554,7 @@ class Struct(_TYPE_, _DECLARABLE_):
                 out = target_type._verify_vals(arg_values[i])
                 if len(out[1]) > 0:
                     raise AttributesNotSatisfied(out[1], arg_values[i])
-                out_vals.append((arg, target_type))
+                out_vals.append((arg, str(target_type)))
             elif type(target_type) is Tuple:
                 out = target_type.value_from(list(arg_values[i]))
                 out_vals.append((arg, out))
@@ -574,6 +567,7 @@ class Struct(_TYPE_, _DECLARABLE_):
                 out_vals.append((arg, target_type.value.value_from(arg_values[i])))
 
         return out_vals, satisy_list
+
 
     def value_from(self, *args: _TYPE_):
         try:
