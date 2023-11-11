@@ -289,11 +289,6 @@ def normalize_arg_type(__type):
         new = RTypes[__type]
     return new
 
-def _value_from_list(_type_list, _arg_list):
-    print(_type_list, _arg_list)
-    out = []
-    for t in _type_list:
-        print(t.value)
 
 class Tuple(_TYPE_):
     def __init__(self, *args: _TYPE_ | list[_TYPE_], **kwargs) -> self:
@@ -356,6 +351,14 @@ class Tuple(_TYPE_):
             )
         return __list[:1] + Tuple._flatten_args(__list[1:])
 
+    @staticmethod
+    def _flatten_lists(__list):
+        if len(__list) == 0:
+            return __list
+        if isinstance(__list[0], list):
+            return Tuple._flatten_lists(__list[0]) + Tuple._flatten_lists(__list[1:])
+        return __list[:1] + Tuple._flatten_lists(__list[1:])
+
     def is_ok(self, *args: _TYPE_) -> bool:
         arg_vals = list(args)
         if (self.get_types_count()) != (len(Tuple._flatten_args(list(arg_vals)))):
@@ -380,7 +383,7 @@ class Tuple(_TYPE_):
 
     def value_from(self, *args: _TYPE_, **kwargs) -> tuple:
         try:
-            arg_vals = list(args)
+            arg_vals = Tuple._flatten_lists(list(args))
             out_vals = []
             if (x := self.get_types_count()) != (
                 y := len(Tuple._flatten_args(list(arg_vals)))
@@ -516,7 +519,7 @@ class Struct(_TYPE_, _DECLARABLE_):
         buf = []
         for arg in __list:
             if type(arg[1]) is tuple:
-                value = tuple([normalize_arg_type(x) for x in arg[1]])
+                value = Tuple(list(arg[1]))
                 buf.append((arg[0], value))
             else:
                 buf.append((arg[0], normalize_arg_type(arg[1])))
@@ -528,7 +531,7 @@ class Struct(_TYPE_, _DECLARABLE_):
             if len(arg_vals) != len(self._type_tree):
                 return False
             out = self._verify_vals(arg_vals)
-            if out[0] != arg_vals or len(out[1]) > 0:
+            if len(out[1]) > 0:
                 return False
             return True
         except Exception as e:
@@ -559,8 +562,14 @@ class Struct(_TYPE_, _DECLARABLE_):
                 if len(out[1]) > 0:
                     raise AttributesNotSatisfied(out[1], arg_values[i])
                 out_vals.append((arg, target_type))
-            elif type(target_type) is tuple:
-                out = _value_from_list(list(target_type), list(arg_values[i]))
+            elif type(target_type) is Tuple:
+                out = target_type.value_from(list(arg_values[i]))
+                out_vals.append((arg, out))
+            # elif type(target_type) is tuple:
+            #     tup = Tuple(list(target_type))
+            #     out = tup._verify_vals(list(arg_values[i]), True)
+            #     print(out)
+            #     # out = _value_from_list(list(target_type), list(arg_values[i]))
             else:
                 out_vals.append((arg, target_type.value.value_from(arg_values[i])))
 
