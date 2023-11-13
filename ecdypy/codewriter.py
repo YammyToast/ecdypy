@@ -21,6 +21,16 @@ default_formatter = Formatter(
     _indent_spaces=4, _separator_function_chains="", _separator="\n"
 )
 
+
+class _DECLARABLE_(ABC):
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def get_declaration(self, __formatter: Formatter = default_formatter):
+        pass
+
+
 """
 Priority Bands:
 -1 : Always last.
@@ -33,7 +43,7 @@ Priority Bands:
 class CodeObject(ABC):
     def __init__(self, __priority: int = -1):
         self._priority = __priority
-    
+
     @abstractmethod
     def __str__(self, __formatter: Formatter):
         pass

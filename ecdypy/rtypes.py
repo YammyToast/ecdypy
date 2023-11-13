@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 import traceback
 
-from .codewriter import default_formatter
+from .codewriter import default_formatter, _DECLARABLE_
 
 import re
 import copy
@@ -52,15 +52,6 @@ class _TYPE_(ABC):
 
     @abstractmethod
     def __str__(self):
-        pass
-
-
-class _DECLARABLE_(ABC):
-    def __init__(self):
-        pass
-
-    @abstractmethod
-    def get_declaration(self, __formatter: Formatter = default_formatter):
         pass
 
 
