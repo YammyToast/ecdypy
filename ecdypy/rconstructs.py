@@ -31,6 +31,9 @@ class Variable:
             if None in (e := [arg_vals.get("name"), arg_vals.get("type")]):
                 raise IncorrectArgCount([a for a in e if a == None])
             print(arg_vals)
+
+
+            
         except IncorrectArgCount as e:
             traceback.print_stack()
             print(
