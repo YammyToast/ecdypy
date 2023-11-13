@@ -419,8 +419,6 @@ class Tuple(_TYPE_):
         return f"({', '.join(buf)})"
 
 
-
-
 # ==============================================================================================
 # ==============================================================================================
 
@@ -558,16 +556,11 @@ class Struct(_TYPE_, _DECLARABLE_):
             elif type(target_type) is Tuple:
                 out = target_type.value_from(list(arg_values[i]))
                 out_vals.append((arg, out))
-            # elif type(target_type) is tuple:
-            #     tup = Tuple(list(target_type))
-            #     out = tup._verify_vals(list(arg_values[i]), True)
-            #     print(out)
-            #     # out = _value_from_list(list(target_type), list(arg_values[i]))
+
             else:
                 out_vals.append((arg, target_type.value.value_from(arg_values[i])))
 
         return out_vals, satisy_list
-
 
     def value_from(self, *args: _TYPE_):
         try:
