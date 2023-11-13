@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 import traceback
 
-from .codewriter import default_formatter, _DECLARABLE_
+from .codewriter import Formatter, default_formatter, _DECLARABLE_
 
 import re
 import copy
