@@ -3,6 +3,7 @@ from __future__ import annotations
 """ Abstract Base Class """
 from abc import ABC, abstractmethod
 
+
 class Macro:
     def __init__(self, __text) -> None:
         self._text = str(__text)
@@ -12,6 +13,7 @@ class Macro:
 
     def __str__(self) -> str:
         return self.get_text()
+
 
 class Derive:
     def __init__(self, *args) -> None:

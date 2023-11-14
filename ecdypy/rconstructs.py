@@ -16,6 +16,9 @@ from .rtypes import (
     normalize_arg_type,
 )
 
+class InvalidMacroArg(Exception):
+    pass
+
 
 # ==============================================================================================
 # ==============================================================================================
@@ -27,13 +30,21 @@ class Variable(_DECLARABLE_):
             arg_vals = Variable._parse_args(list(args), kwargs)
             if arg_vals.get("name") == -1:
                 raise InvalidName
+
+            name = arg_vals.get("name")
+            typ = arg_vals.get("type")
             # There's no way on this godforsaken planet that this is good code but idc it looks funny.
-            if None in (e := [arg_vals.get("name"), arg_vals.get("type")]):
+            if None in (e := [name,type]):
                 raise IncorrectArgCount([a for a in e if a == None])
 
-            self._name = arg_vals["name"]
-            self._type = arg_vals["type"]
-            self._value = arg_vals["value"]
+            macros = arg_vals.get("macros", [])
+            if None in (e := macros):
+                raise InvalidMacroArg(e)
+
+            self._name = name
+            self._type = typ
+            self._value = arg_vals.get("value")
+            self._macros = arg_vals.get("macros")
 
         except IncorrectArgCount as e:
             traceback.print_stack()
@@ -46,6 +57,11 @@ class Variable(_DECLARABLE_):
                 r"""\nInvalid 'name' argument provided in variable assignment.\n
                   https://rust-lang.github.io/api-guidelines/naming.html\n"""
             )
+        except InvalidMacroArg as e:
+            traceback.print_stack()
+            print(
+                f"\nInvalid Macro Argument given. (in {e.args[0]})"
+            )
 
     @staticmethod
     def _parse_args(__args_list, __kwargs_list):
@@ -53,6 +69,8 @@ class Variable(_DECLARABLE_):
             "name": dict(__kwargs_list).get("name"),
             "type": dict(__kwargs_list).get("type"),
             "value": dict(__kwargs_list).get("value"),
+            "attrs": dict(__kwargs_list).get("attrs"),
+            "macros": dict(__kwargs_list).get("macros"),
         }
         for i, a in zip(list(arg_dict), __args_list):
             arg_dict[i] = a
@@ -68,6 +86,10 @@ class Variable(_DECLARABLE_):
 
             if (v := arg_dict["value"]) != None:
                 arg_dict["value"] = Variable._match_value(t, v)
+        if (m := arg_dict["macros"]) != None:
+            m = [str(m)] if not isinstance(m, list) else [str(x) for x in m]
+            arg_dict["macros"] = m                
+
         """Filter out none values"""
         return {k: v for k, v in arg_dict.items() if v != None}
 
