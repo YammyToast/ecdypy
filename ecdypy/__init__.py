@@ -8,6 +8,8 @@ from .rtypes import Tuple
 from .rtypes import Struct
 from .rconstructs import Variable
 
+from .macros import Derive
+
 __all__ = (
     "CodeObject",
     "CodeText",
@@ -17,4 +19,6 @@ __all__ = (
     "Tuple",
     "Struct",
     "Variable",
+    "Decorator",
+    "Derive"
 )
