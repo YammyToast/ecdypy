@@ -11,6 +11,9 @@ sys.path.append(parent)
 
 from ecdypy.codewriter import CodeWriter, CodeText, default_formatter
 
+# ==============================================================================================
+# ==============================================================================================
+
 
 def test_codewriter_add_autogen_comment():
     cwr = CodeWriter()
@@ -27,11 +30,12 @@ def test_codewriter_add_autogen_comment():
     cwr_no_args.add_auto_gen_comment()
 
     assert str(cwr_no_args)
-    
+
     cwr_str_author = CodeWriter()
     cwr_str_author.add_auto_gen_comment(None, "James Hardy <cyanjamesmail@gmail.com>")
 
     assert str(cwr_str_author)
+
 
 def test_codewriter_add_codetext():
     cwr = CodeWriter()

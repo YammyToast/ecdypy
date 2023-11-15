@@ -105,7 +105,8 @@ class Variable(_DECLARABLE_):
             return __type.value.value_from(__value)
 
     def get_declaration(self, __formatter: Formatter = default_formatter) -> str:
-        return f"let {str(self._name)}: {str(self._type)} = {str(self._value)};"
+        typ = self._type.value if isinstance(self._type, RTypes) else self._type
+        return f"let {str(self._name)}: {str(typ)} = {str(self._value)};"
 
     def get_name(self) -> str:
         return self._name
