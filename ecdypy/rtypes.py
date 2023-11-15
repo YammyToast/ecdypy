@@ -172,7 +172,6 @@ class _BOOLEAN_(_TYPE_):
     def value_from(self, __value: bool | int | str) -> str:
         try:
             if not self.is_ok(__value):
-                print("HERE")
                 raise
             __value = str(__value)
             if re.search(r"^(1|true|True)$", __value) != None:
