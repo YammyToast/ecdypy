@@ -562,7 +562,14 @@ class Struct(_TYPE_, _DECLARABLE_):
             if len(out[0]) < len(arg_vals):
                 dif = list(set(arg_vals) - set(out[0]))
                 raise UnknownArgKeys(dif)
-            return out[0]
+            
+            buf = f"{self.get_name()} {{"
+            for pair in out[0]:
+                val = f"\'{pair[1]}\'" if isinstance(pair[1], str) else pair[1]
+                buf = buf + f"{pair[0]}: {val},"
+            buf = buf + "};"
+
+            return buf
         except UnknownArgKeys as e:
             traceback.print_stack()
             print(f"Unknown Key: '{e.args[0]}' provided. ({list(args)})'")

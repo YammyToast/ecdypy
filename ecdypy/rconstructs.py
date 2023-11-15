@@ -109,8 +109,20 @@ class Variable(_DECLARABLE_):
             buf = buf + "\n".join(self._macros) + "\n"
 
         typ = self._type.value if isinstance(self._type, RTypes) else self._type
-        value = f"'{self._value}'" if isinstance(self._value, str) else self._value
-        buf = buf + f"let {str(self._name)}: {str(typ)} = {value};"
+
+        # This code feels awful        
+        val = self._value
+        val_fmt = ""
+        if isinstance(self._type, Struct):
+            val_fmt = val
+        elif (self._type == RTypes.char):
+            val_fmt = f"\'{val}\'"
+        elif isinstance(val, str):
+            val_fmt = f"\"{val}\""
+        else:
+            val_fmt = str(val)
+        
+        buf = buf + f"let {str(self._name)}: {str(typ)} = {val_fmt}{';' if val_fmt[-1] != ';' else ''}"
         return buf
 
     def get_name(self) -> str:
