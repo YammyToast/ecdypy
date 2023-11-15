@@ -20,5 +20,5 @@ __all__ = (
     "Struct",
     "Variable",
     "Decorator",
-    "Derive"
+    "Derive",
 )

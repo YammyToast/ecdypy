@@ -1,3 +1,5 @@
 docs/_build/
 sandbox.py
 ecdypy/__pycache__/
+.coverage
+htmlcov

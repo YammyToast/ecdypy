@@ -20,8 +20,8 @@ def test_codewriter_add_autogen_comment():
     cwr.add_auto_gen_comment(
         "MIT",
         [
-            "James Hardy <cyanjamesmail@gmail.com>",
-            "Nathan Webb <nathanwebb02@outlook.com>",
+            "Bingus <bingusbongus@gmail.com>",
+            "Angoos <angoos@outlook.com>",
         ],
     )
     assert str(cwr)

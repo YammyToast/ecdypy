@@ -11,6 +11,8 @@ current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
 
+replace_pattern = r"[\n\t\s]*"
+
 
 def test_type_u8():
     t = RTypes.u8.value
@@ -189,7 +191,6 @@ def test_tuple_compound_assignment():
 
 
 def test_struct_assignment():
-    replace_pattern = r"[\n\t\s]*"
     struct_one = Struct({"A": "u8", "B": "u16"}, name="struct_one")
     assert str(struct_one) == "struct_one"
     assert struct_one.is_ok({"A": 16, "B": 16}) == True

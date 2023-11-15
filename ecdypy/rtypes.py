@@ -282,7 +282,7 @@ def normalize_arg_type(__type):
 
 
 class Tuple(_TYPE_):
-    def __init__(self, *args: _TYPE_ | list[_TYPE_], **kwargs) -> self:
+    def __init__(self, *args: _TYPE_ | list[_TYPE_], **kwargs) -> Tuple:
         try:
             check = kwargs.get("check") if type(kwargs.get("check")) is bool else True
             arg_list = Tuple._flatten_args(list(args))
@@ -415,7 +415,7 @@ class Tuple(_TYPE_):
 
 
 class Struct(_TYPE_, _DECLARABLE_):
-    def __init__(self, *args: _TYPE_ | list[_TYPE_], **kwargs: name) -> Struct:
+    def __init__(self, *args: _TYPE_ | list[_TYPE_], **kwargs) -> Struct:
         try:
             check = kwargs.get("check") if type(kwargs.get("check")) is bool else True
             name = kwargs.get("name")
@@ -562,10 +562,10 @@ class Struct(_TYPE_, _DECLARABLE_):
             if len(out[0]) < len(arg_vals):
                 dif = list(set(arg_vals) - set(out[0]))
                 raise UnknownArgKeys(dif)
-            
+
             buf = f"{self.get_name()} {{"
             for pair in out[0]:
-                val = f"\'{pair[1]}\'" if isinstance(pair[1], str) else pair[1]
+                val = f"'{pair[1]}'" if isinstance(pair[1], str) else pair[1]
                 buf = buf + f"{pair[0]}: {val},"
             buf = buf + "};"
 
