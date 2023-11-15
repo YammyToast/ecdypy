@@ -16,6 +16,7 @@ from .rtypes import (
     normalize_arg_type,
 )
 
+
 class InvalidMacroArg(Exception):
     pass
 
@@ -34,7 +35,7 @@ class Variable(_DECLARABLE_):
             name = arg_vals.get("name")
             typ = arg_vals.get("type")
             # There's no way on this godforsaken planet that this is good code but idc it looks funny.
-            if None in (e := [name,type]):
+            if None in (e := [name, type]):
                 raise IncorrectArgCount([a for a in e if a == None])
 
             macros = arg_vals.get("macros", [])
@@ -59,9 +60,7 @@ class Variable(_DECLARABLE_):
             )
         except InvalidMacroArg as e:
             traceback.print_stack()
-            print(
-                f"\nInvalid Macro Argument given. (in {e.args[0]})"
-            )
+            print(f"\nInvalid Macro Argument given. (in {e.args[0]})")
 
     @staticmethod
     def _parse_args(__args_list, __kwargs_list):
@@ -88,7 +87,7 @@ class Variable(_DECLARABLE_):
                 arg_dict["value"] = Variable._match_value(t, v)
         if (m := arg_dict["macros"]) != None:
             m = [str(m)] if not isinstance(m, list) else [str(x) for x in m]
-            arg_dict["macros"] = m                
+            arg_dict["macros"] = m
 
         """Filter out none values"""
         return {k: v for k, v in arg_dict.items() if v != None}
@@ -105,8 +104,14 @@ class Variable(_DECLARABLE_):
             return __type.value.value_from(__value)
 
     def get_declaration(self, __formatter: Formatter = default_formatter) -> str:
+        buf = ""
+        if self._macros != None:
+            buf = buf + "\n".join(self._macros) + "\n"
+
         typ = self._type.value if isinstance(self._type, RTypes) else self._type
-        return f"let {str(self._name)}: {str(typ)} = {str(self._value)};"
+        value = f"'{self._value}'" if isinstance(self._value, str) else self._value
+        buf = buf + f"let {str(self._name)}: {str(typ)} = {value};"
+        return buf
 
     def get_name(self) -> str:
         return self._name
