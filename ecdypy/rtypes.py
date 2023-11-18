@@ -12,30 +12,44 @@ import copy
 
 
 class UnknownTypeArgument(Exception):
+    """Argument passed as a type-parameter is not recognised."""
+
     pass
 
 
 class UnknownArgKeys(Exception):
+    """Unknown key/field given in struct instantiation."""
+
     pass
 
 
 class AttributesNotSatisfied(Exception):
+    """Key/Field not satisfied in struct instantiation."""
+
     pass
 
 
 class IncorrectArgCount(Exception):
+    """Incorrect number of arguments given in object call."""
+
     pass
 
 
 class InvalidStructAttributeName(Exception):
+    """Invalid name provided for struct attribute."""
+
     pass
 
 
 class InvalidName(Exception):
+    """Invalid name provided for struct."""
+
     pass
 
 
 class _TYPE_(ABC):
+    """Generic Interface for types in ecdypy."""
+
     def __init__(self, __display_form: str) -> None:
         try:
             self._display_form = __display_form
@@ -44,10 +58,12 @@ class _TYPE_(ABC):
 
     @abstractmethod
     def value_from(self, __value):
+        """Filter a value through the given type template."""
         pass
 
     @abstractmethod
     def is_ok(self, __value) -> bool:
+        """Check whether a provided value obeys the types constraints."""
         pass
 
     @abstractmethod
@@ -60,6 +76,8 @@ class _TYPE_(ABC):
 
 
 class _NUMBER_(_TYPE_):
+    """Generic _TYPE_ interface-function implementations."""
+
     def value_from(self, __value):
         try:
             if self.is_ok(__value):
@@ -250,6 +268,55 @@ class _CHAR_(_TYPE_):
 
 
 class RTypes(Enum):
+    """Enum of Rust's Data Types as per: https://doc.rust-lang.org/book/ch03-02-data-types.html
+    Examples:
+        Generic Usage:
+        >>> Variable("my_var_1", RTypes.u32, ...)
+
+        Alternative "string" method of invoking RTypes.u32:
+        >>> Variable("my_var_2", "u32", ...)
+
+        Similar usage for Tuples and Structs:
+        >>> # Enum and string methods within the same statements.
+        >>> Struct(name="my_struct_1", {"A": "RTypes.u8", "B": "u16"})
+        >>> Tuple(RTypes.i32, RTypes.char, "f32")
+
+    Attributes:
+        u8: "u8"
+
+        u16: "u16"
+
+        u32: "u32"
+
+        u64: "u64"
+
+        u128: "u128"
+
+        usize: "usize"
+
+        i8: "i8"
+
+        i16: "i16"
+
+        i32: "i32"
+
+        i64: "i64"
+
+        i128: "i128"
+
+        isize: "isize"
+
+        f32: "f32"
+
+        f64: "f64"
+
+        bool: "bool"
+
+        str: "str"
+
+        char: "char"
+    """
+
     u8 = _U8_("u8")
     i8 = _I8_("i8")
     u16 = _U16_("u16")
@@ -281,7 +348,37 @@ def normalize_arg_type(__type):
 
 
 class Tuple(_TYPE_):
-    def __init__(self, *args: _TYPE_ | list[_TYPE_], **kwargs) -> Tuple:
+    """Class for creating Rust Tuples for type declarations and value filtering.
+
+    Used to set Rust data-types as a Tuple of existing or user-defined types.
+
+    Tuples can be used as Type arguments in other types and constructs.
+    Implementation per: https://doc.rust-lang.org/rust-by-example/primitives/tuples.html
+
+    Examples:
+    >>> import ecdypy as ec
+    >>> my_tuple = ec.Tuple(ec.RTypes.u16, ec.RTypes.u16, check=True)
+    >>> my_variable = ec.Variable("my_var", my_tuple)
+    >>> my_value = my_variable.value_from(16, 32)
+    >>> print(my_value) # (16, 32)
+    >>> print(my_variable.get_declaration()) # let my_var: (u16, u16);
+    >>>
+    >>> complex_tuple = ec.Tuple(ec.RTypes.u8, my_tuple)
+    >>> complex_variable = ec.Variable("complex", complex_tuple)
+    >>> print(complex_variable.get_declaration()) # let complex: (u8, (u16, u16))
+    """
+
+    def __init__(self, *args: _TYPE_ | list[_TYPE_], **kwargs) -> None:
+        """Tuple Constructor
+
+        Args:
+            \\*\\*kwargs: keyword arguments in ['check']
+
+            check: bool (default=True)
+
+        :return: _description_
+        :rtype: None
+        """
         try:
             check = kwargs.get("check") if type(kwargs.get("check")) is bool else True
             arg_list = Tuple._flatten_args(list(args))
@@ -350,6 +447,13 @@ class Tuple(_TYPE_):
         return __list[:1] + Tuple._flatten_lists(__list[1:])
 
     def is_ok(self, *args: _TYPE_) -> bool:
+        """_summary_
+
+        _extended_summary_
+
+        :return: _description_
+        :rtype: bool
+        """
         arg_vals = list(args)
         if (self.get_types_count()) != (len(Tuple._flatten_args(list(arg_vals)))):
             return False

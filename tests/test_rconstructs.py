@@ -1,3 +1,6 @@
+from ecdypy.macros import Macro, Derive
+from ecdypy.rtypes import RTypes, Tuple, Struct
+from ecdypy.rconstructs import Variable
 import sys
 import os
 
@@ -10,10 +13,6 @@ current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
 sys.path.append(parent)
 
-
-from ecdypy.rconstructs import Variable
-from ecdypy.rtypes import RTypes, Tuple, Struct
-from ecdypy.macros import Macro, Derive
 
 replace_pattern = r"[\n\t\s]*"
 
@@ -64,3 +63,7 @@ def test_variables_extra():
     variable_three = Variable("my_var_3", RTypes.i16, variable_two)
     three_declaration = re.sub(replace_pattern, "", variable_three.get_declaration())
     assert three_declaration == """letmy_var_3:i16=my_var_2;"""
+
+
+# ==============================================================================================
+# ==============================================================================================
