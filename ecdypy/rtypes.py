@@ -372,12 +372,17 @@ class Tuple(_TYPE_):
         """Tuple Constructor
 
         Args:
+            *args:
+                _TYPE_: An object that implements the _TYPE_ interface.
+
+                list[_TYPE_]: A list of objects that implement the _TYPE_ interface.
+
+            ----
+
             \\*\\*kwargs: keyword arguments in ['check']
 
-            check: bool (default=True)
+                check: bool (default=True)
 
-        :return: _description_
-        :rtype: None
         """
         try:
             check = kwargs.get("check") if type(kwargs.get("check")) is bool else True
