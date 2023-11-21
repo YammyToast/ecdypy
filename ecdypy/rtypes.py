@@ -369,7 +369,7 @@ class Tuple(_TYPE_):
     """
 
     def __init__(self, *args: _TYPE_ | list[_TYPE_], **kwargs) -> None:
-        """Tuple Constructor
+        """Ecdypy Tuple Constructor
 
         Args:
             *args:
@@ -377,11 +377,22 @@ class Tuple(_TYPE_):
 
                 list[_TYPE_]: A list of objects that implement the _TYPE_ interface.
 
-            ----
 
             \\*\\*kwargs: keyword arguments in ['check']
 
                 check: bool (default=True)
+
+        Examples:
+            >>> import ecdypy as ec
+            >>> tuple_one = ec.Tuple(ec.RTypes.u16, ec.RTypes.u16) # Check = True
+            >>> tuple_two = ec.Tuple([ec.RTypes.i16, ec.RTypes.i32], check=False) # Check = False
+            >>> tuple_three = ec.Tuple(tuple_two, ec.RTypes.i16, [ec.RTypes.u8, ec.RTypes.usize])
+            >>> tuple_four = ec.Tuple((ec.RTypes.i16, ec.RTypes.u16), ec.RTypes.i32)
+            >>> \n
+            >>> print(tuple_one) # (u16, u16)
+            >>> print(tuple_two) # (i16, i32)
+            >>> print(tuple_three) # ((i16, i32), i16, u8, usize)
+            >>> print(tuple_four) # ((i16, u16), i32)
 
         """
         try:
@@ -451,15 +462,32 @@ class Tuple(_TYPE_):
             return Tuple._flatten_lists(__list[0]) + Tuple._flatten_lists(__list[1:])
         return __list[:1] + Tuple._flatten_lists(__list[1:])
 
-    def is_ok(self, *args: _TYPE_) -> bool:
-        """_summary_
+    def is_ok(self, *args: _TYPE_ | list[_TYPE_]) -> bool:
+        """Checks whether a given set of values fits all of the Tuple's type constraints.
 
-        _extended_summary_
+        Examples:
+            >>> import ecdypy as ec
+            >>> tuple_one = ec.Tuple(ec.RTypes.u16, ec.RTypes.u16)
+            >>> tuple_two = ec.Tuple((ec.RTypes.i16, ec.RTypes.u16), ec.RTypes.i32)
+            >>> \n
+            >>> print(tuple_one.is_ok(16, 16)) # True
+            >>> print(tuple_one.is_ok(-1, 16)) # False
+            >>> print(tuple_one.is_ok([16, 16])) # ! THROWS ERROR
+            >>> print(tuple_two.is_ok((16, 16), 32)) # True
 
-        :return: _description_
+        Args:
+            *args:
+                _TYPE_: An object that implements the _TYPE_ interface.
+
+                list[_TYPE_]: A list of objects that implement the _TYPE_ interface.
+
+        :return: bool. True if the given values fit within the Tuple's types constraints. False otherwise.
         :rtype: bool
+
+
         """
         arg_vals = list(args)
+        # SHOULD CHECK IF ANY OF THE VALUES HAVE BEEN CHANGED. IF SO, NOT OKAY!
         if (self.get_types_count()) != (len(Tuple._flatten_args(list(arg_vals)))):
             return False
         if len(self._verify_vals(arg_vals)) != len(arg_vals):
