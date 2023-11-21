@@ -481,10 +481,9 @@ class Tuple(_TYPE_):
 
                 list[_TYPE_]: A list of objects that implement the _TYPE_ interface.
 
+
         :return: bool. True if the given values fit within the Tuple's types constraints. False otherwise.
         :rtype: bool
-
-
         """
         arg_vals = list(args)
         # SHOULD CHECK IF ANY OF THE VALUES HAVE BEEN CHANGED. IF SO, NOT OKAY!
@@ -508,10 +507,32 @@ class Tuple(_TYPE_):
                 out_vals.append(RTypes[type_item].value.value_from(__args[i]))
         return tuple(out_vals)
 
-    def value_from(self, *args: _TYPE_, **kwargs) -> tuple:
+    def value_from(self, *args: _TYPE_ | list[_TYPE_]) -> tuple:
+        """Filter a set of input values through the contraints of the Tuple's types.
+
+        Examples:
+        >>> import ecdypy as ec
+        >>> tuple_one = ec.Tuple(ec.RTypes.u16, ec.RTypes.u16)
+        >>> tuple_two = ec.Tuple((ec.RTypes.i16, ec.RTypes.u16), ec.RTypes.i32)
+        >>> \n
+        >>> print(tuple_one.value_from(16, 32)) # (16, 32)
+        >>> print(tuple_one.value_from([16, 32])) # (16, 32)
+        >>> print(tuple_two.value_from((16, 32), -16)) # ((16,32), -16)
+        >>> print(tuple_two.value_from([(16, 32), -16])) # ((16,32), -16)
+
+        Args:
+            *args:
+                _TYPE_: An object that implements the _TYPE_ interface.
+
+                list[_TYPE_]: A list of objects that implement the _TYPE_ interface.
+
+
+        :raises IncorrectArgCount: Raised when the number of input values does not match the number of types in the tuple.
+        :return: A tuple of filtered values.
+        :rtype: tuple
+        """
         try:
             arg_vals = Tuple._flatten_lists(list(args))
-            out_vals = []
             if (x := self.get_types_count()) != (
                 y := len(Tuple._flatten_args(list(arg_vals)))
             ):
@@ -524,6 +545,11 @@ class Tuple(_TYPE_):
             print(f"\nInvalid number of args given: {y} ({x} required).\n")
 
     def get_types_count(self) -> int:
+        """Returns the number of types in the Tuple, including those in nested Tuples.
+
+        :return: int. Number of types in Tuple.
+        :rtype: int
+        """
         count = 0
         for t in self._type_tree:
             if isinstance(t, Tuple):
@@ -533,9 +559,20 @@ class Tuple(_TYPE_):
         return count
 
     def get_types(self) -> list[str]:
+        """Returns the type tree of the Tuple.
+
+        :return: _description_
+        :rtype: list[str]
+        """
         return self._type_tree
 
     def __str__(self):
+        """Generates the string representation of the tuple.
+
+
+        :return: str. String representation of tuple.
+        :rtype: _type_
+        """
         buf = [str(x) for x in self._type_tree]
         buf = []
         for x in self._type_tree:
@@ -551,6 +588,26 @@ class Tuple(_TYPE_):
 
 
 class Struct(_TYPE_, _DECLARABLE_):
+    """Class for creating Rust Structs. Can be used as type arguments or for writing struct declarations.
+
+    Struct objects can be passed as a type argument into any appropriate function. Ecdypy does not automatically declare Structs,
+    therefore the user must add a declaration prior to its usage as a type.
+
+    Structs can be used as Type arguments in other types and constructs.
+    Implementation per: https://doc.rust-lang.org/book/ch05-01-defining-structs.html
+
+    Examples:
+    >>> import ecdypy as ec
+    >>> struct_one = ec.Struct({"A": "u8", "B": "u16"}, name="my_struct")
+    >>> print(struct_one) # my_struct
+    >>> print(struct_one.get_declaration())
+    >>> # struct struct_one {
+    >>> #   A: u8,
+    >>> #    B: u16
+    >>> # }
+
+    """
+
     def __init__(self, *args: _TYPE_ | list[_TYPE_], **kwargs) -> Struct:
         try:
             check = kwargs.get("check") if type(kwargs.get("check")) is bool else True
