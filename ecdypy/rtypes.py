@@ -470,10 +470,10 @@ class Tuple(_TYPE_):
             >>> tuple_one = ec.Tuple(ec.RTypes.u16, ec.RTypes.u16)
             >>> tuple_two = ec.Tuple((ec.RTypes.i16, ec.RTypes.u16), ec.RTypes.i32)
             >>> \n
-            >>> print(tuple_one.is_ok(16, 16)) # True
-            >>> print(tuple_one.is_ok(-1, 16)) # False
-            >>> print(tuple_one.is_ok([16, 16])) # ! THROWS ERROR
-            >>> print(tuple_two.is_ok((16, 16), 32)) # True
+            >>> assert tuple_one.is_ok(16, 16) == True
+            >>> assert tuple_one.is_ok(-1, 16) == False
+            >>> assert tuple_one.is_ok([16, 16]) == True # ! THROWS ERROR
+            >>> assert tuple_two.is_ok((16, 16), 32) == True
 
         Args:
             *args:
@@ -571,7 +571,7 @@ class Tuple(_TYPE_):
 
 
         :return: str. String representation of tuple.
-        :rtype: _type_
+        :rtype: str
         """
         buf = [str(x) for x in self._type_tree]
         buf = []
@@ -609,6 +609,43 @@ class Struct(_TYPE_, _DECLARABLE_):
     """
 
     def __init__(self, *args: _TYPE_ | list[_TYPE_], **kwargs) -> Struct:
+        """Ecdypy Struct Constructor
+
+        Args:
+            *args:
+                _TYPE_: An object that implements the _TYPE_ interface.
+
+                list[_TYPE_]: A list of objects that implement the _TYPE_ interface.
+
+
+            \\*\\*kwargs: keyword arguments in ['check', 'name']
+
+                check: bool (default=True)
+
+                name: str (default=None, required=True)
+
+        Examples:
+            >>> import ecdypy as ec
+            >>> struct_one = ec.Struct({"A": "u8", "B": "u16"}, name="my_struct")
+            >>> print(struct_one) # my_struct
+            >>> print(struct_one.get_declaration())
+            >>> # struct struct_one {
+            >>> #   A: u8,
+            >>> #   B: u16
+            >>> # }
+            ____
+            >>> struct_two = Struct(
+            >>>     {"A": RTypes.u16, "B": RTypes.str}, {"C": RTypes.i8},
+            >>>     name=split
+            >>> )
+            >>> print(struct_two) # split
+            >>> print(struct_two.get_declaration())
+            >>> # struct split {
+            >>> #   A: u16,
+            >>> #   B: str,
+            >>> #   C: i8
+            >>> # }
+        """
         try:
             check = kwargs.get("check") if type(kwargs.get("check")) is bool else True
             name = kwargs.get("name")
@@ -701,6 +738,29 @@ class Struct(_TYPE_, _DECLARABLE_):
         return buf
 
     def is_ok(self, *args: _TYPE_, **kwargs):
+        """Checks whether a given set of values respectively meet the constraints of the Struct's attributes.
+
+        Examples:
+            >>> import ecdypy as ec
+            >>> struct_one = ec.Struct({"A": "u8", "B": "u16"}, name="my_struct")
+            >>> assert struct_one.is_ok({"A": 16, "B": 16}) == True
+            ____
+            >>> struct_two = Struct(
+            >>>     {"A": RTypes.u16, "B": RTypes.str}, {"C": RTypes.i8},
+            >>>     name=struct_two_name
+            >>> )
+            >>> assert struct_two.is_ok({"A": 32, "B": "foo", "C": -10}) == True
+
+        Args:
+            *args:
+                _TYPE_: An object that implements the _TYPE_ interface.
+
+                list[_TYPE_]: A list of objects that implement the _TYPE_ interface.
+
+
+        :return: bool. True if the given values fit within the Struct's types constraints. False otherwise.
+        :rtype: bool
+        """
         try:
             arg_vals = Struct._convert_arg_format(list(args))
             if len(arg_vals) != len(self._type_tree):
@@ -732,7 +792,6 @@ class Struct(_TYPE_, _DECLARABLE_):
 
             target_type = tree_types[tree_ids.index(arg)]
             if type(target_type) is Struct:
-                # print("HEREEE", target_type._verify_vals(arg_values[i]))
                 out = target_type._verify_vals(arg_values[i])
                 if len(out[1]) > 0:
                     raise AttributesNotSatisfied(out[1], arg_values[i])
@@ -746,7 +805,35 @@ class Struct(_TYPE_, _DECLARABLE_):
 
         return out_vals, satisy_list
 
-    def value_from(self, *args: _TYPE_):
+    def value_from(self, *args: _TYPE_ | list[_TYPE_]) -> str:
+        """Filters a given set of values through their constraints of their respective type in the Struct's attributes.
+
+        Examples:
+        >>> import ecdypy as ec
+        >>> struct_one = ec.Struct({"A": "u8", "B": "u16"}, name="my_struct")
+        >>> print(struct_one.value_from({"A": 16, "B": 16}))
+        >>> # struct_one {A: 16,B: 16,};
+        ____
+        >>> struct_two = Struct(
+        >>>     {"A": RTypes.u16, "B": RTypes.str}, {"C": RTypes.i8},
+        >>>     name=struct_two_name
+        >>> )
+        >>> print(struct_two.value_from({"A": 32, "B": "foo", "C": -10}))
+        >>> # struct_two {A: 32,B: 'foo',C: -10,};
+
+
+        Args:
+            *args:
+                _TYPE_: An object that implements the _TYPE_ interface.
+
+                list[_TYPE_]: A list of objects that implement the _TYPE_ interface.
+
+
+        :raises UnknownArgKeys: Unknown key/field given in struct instantiation.
+        :raises AttributesNotSatisfied: Key/Field not satisfied in struct instantiation.
+        :return: Initialization string for Struct with the given values.
+        :rtype: str
+        """
         try:
             arg_vals = Struct._convert_arg_format(list(args))
             out = self._verify_vals(arg_vals)
@@ -773,12 +860,49 @@ class Struct(_TYPE_, _DECLARABLE_):
             )
 
     def get_types(self) -> list[str]:
+        """Returns the type tree of the Struct.
+
+        :return: List of type names as str.
+        :rtype: list[str]
+        """
         return self._type_tree
 
     def get_name(self) -> str:
+        """Returns the name of the Struct.
+
+        :return: Name of Struct object as str.
+        :rtype: str
+        """
         return self._name
 
     def get_declaration(self, __formatter: Formatter = default_formatter) -> str:
+        """Get the string representation of the Struct's declaration.
+
+        Examples:
+        >>> import ecdypy as ec
+        >>> struct_one = ec.Struct({"A": "u8", "B": "u16"}, name="my_struct")
+        >>> print(struct_one.get_declaration())
+        >>> # struct struct_one {
+        >>> #   A: u8,
+        >>> #   B: u16
+        >>> # }
+        ____
+        >>> struct_two = Struct(
+        >>>     {"A": RTypes.u16, "B": RTypes.str}, {"C": RTypes.i8},
+        >>>     name=split
+        >>> )
+        >>> print(struct_two.get_declaration())
+        >>> # struct split {
+        >>> #   A: u16,
+        >>> #   B: str,
+        >>> #   C: i8
+        >>> # }
+
+        :param __formatter: _description_, defaults to default_formatter
+        :type __formatter: Formatter, optional
+        :return: _description_
+        :rtype: str
+        """
         buf = []
         for x, y in self._type_tree:
             type_text = y
@@ -792,4 +916,11 @@ class Struct(_TYPE_, _DECLARABLE_):
         return "struct {0} {{\n{1}\n}}".format(self._name, f",\n".join(buf))
 
     def __str__(self, __formatter: Formatter = default_formatter) -> str:
+        """Generates the string representation of the struct.
+        This is equivalent to returning the Struct's name.
+
+
+        :return: str. Struct's name.
+        :rtype: str
+        """
         return self.get_name()
