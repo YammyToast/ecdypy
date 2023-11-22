@@ -12,6 +12,11 @@ from ._meta import __version__, __source__
 
 @dataclass
 class Formatter:
+    """Formatter Interface Class
+    Provides options for determining how a CodeWriter will format its text.
+    WIP.
+    """
+
     _indent_spaces: int
     _separator_function_chains: str
     _separator: str
@@ -31,16 +36,9 @@ class _DECLARABLE_(ABC):
         pass
 
 
-"""
-Priority Bands:
--1 : Always last.
-0 : Lowest.
-1 : Regular.
-2 : Highest.
-"""
-
-
 class CodeObject(ABC):
+    """Base Class for code constructs to ensure the CodeWriter can handle them correctly."""
+
     def __init__(self, __priority: int = -1):
         self._priority = __priority
 
@@ -50,7 +48,23 @@ class CodeObject(ABC):
 
 
 class CodeText(CodeObject):
+    """CodeObject implementation for assisting with raw-text code constructs.
+
+    Examples:
+        >>> import ecdypy as ec
+        >>> cwr = ec.CodeWriter()
+        >>> text = CodeText("Sample Text 1")
+        >>> text.add_text()
+        >>> text.add_text("Paragraph 1")
+        >>> text += "Line 1"
+        >>> text = text + "Line 2"
+    """
+
     def __init__(self, __text: str | list[str] | None = None):
+        """CodeText Constructor
+
+        :param __text: str | list[str]. Text to add to the CodeWriter tree, defaults to None
+        """
         self._text = deque()
         if __text != None:
             self.add_text(__text)

@@ -270,51 +270,12 @@ class _CHAR_(_TYPE_):
 class RTypes(Enum):
     """Enum of Rust's Data Types as per: https://doc.rust-lang.org/book/ch03-02-data-types.html
     Examples:
-        Generic Usage:
         >>> Variable("my_var_1", RTypes.u32, ...)
-
-        Alternative "string" method of invoking RTypes.u32:
         >>> Variable("my_var_2", "u32", ...)
-
-        Similar usage for Tuples and Structs:
         >>> # Enum and string methods within the same statements.
         >>> Struct(name="my_struct_1", {"A": "RTypes.u8", "B": "u16"})
         >>> Tuple(RTypes.i32, RTypes.char, "f32")
 
-    Attributes:
-        u8: "u8"
-
-        u16: "u16"
-
-        u32: "u32"
-
-        u64: "u64"
-
-        u128: "u128"
-
-        usize: "usize"
-
-        i8: "i8"
-
-        i16: "i16"
-
-        i32: "i32"
-
-        i64: "i64"
-
-        i128: "i128"
-
-        isize: "isize"
-
-        f32: "f32"
-
-        f64: "f64"
-
-        bool: "bool"
-
-        str: "str"
-
-        char: "char"
     """
 
     u8 = _U8_("u8")
@@ -340,7 +301,7 @@ class RTypes(Enum):
 # ==============================================================================================
 
 
-def normalize_arg_type(__type):
+def _normalize_arg_type(__type):
     new = __type
     if RTypes._member_names_.__contains__(__type):
         new = RTypes[__type]
@@ -356,16 +317,16 @@ class Tuple(_TYPE_):
     Implementation per: https://doc.rust-lang.org/rust-by-example/primitives/tuples.html
 
     Examples:
-    >>> import ecdypy as ec
-    >>> my_tuple = ec.Tuple(ec.RTypes.u16, ec.RTypes.u16, check=True)
-    >>> my_variable = ec.Variable("my_var", my_tuple)
-    >>> my_value = my_variable.value_from(16, 32)
-    >>> print(my_value) # (16, 32)
-    >>> print(my_variable.get_declaration()) # let my_var: (u16, u16);
-    >>>
-    >>> complex_tuple = ec.Tuple(ec.RTypes.u8, my_tuple)
-    >>> complex_variable = ec.Variable("complex", complex_tuple)
-    >>> print(complex_variable.get_declaration()) # let complex: (u8, (u16, u16))
+        >>> import ecdypy as ec
+        >>> my_tuple = ec.Tuple(ec.RTypes.u16, ec.RTypes.u16, check=True)
+        >>> my_variable = ec.Variable("my_var", my_tuple)
+        >>> my_value = my_variable.value_from(16, 32)
+        >>> print(my_value) # (16, 32)
+        >>> print(my_variable.get_declaration()) # let my_var: (u16, u16);
+        >>>
+        >>> complex_tuple = ec.Tuple(ec.RTypes.u8, my_tuple)
+        >>> complex_variable = ec.Variable("complex", complex_tuple)
+        >>> print(complex_variable.get_declaration()) # let complex: (u8, (u16, u16))
     """
 
     def __init__(self, *args: _TYPE_ | list[_TYPE_], **kwargs) -> None:
@@ -433,7 +394,7 @@ class Tuple(_TYPE_):
             return Tuple._convert_recursive_objects(
                 __list[0]
             ) + Tuple._convert_recursive_objects(__list[1:])
-        __list[0] = normalize_arg_type(__list[0])
+        __list[0] = _normalize_arg_type(__list[0])
         return __list[:1] + Tuple._convert_recursive_objects(__list[1:])
 
     @staticmethod
@@ -511,14 +472,14 @@ class Tuple(_TYPE_):
         """Filter a set of input values through the contraints of the Tuple's types.
 
         Examples:
-        >>> import ecdypy as ec
-        >>> tuple_one = ec.Tuple(ec.RTypes.u16, ec.RTypes.u16)
-        >>> tuple_two = ec.Tuple((ec.RTypes.i16, ec.RTypes.u16), ec.RTypes.i32)
-        >>> \n
-        >>> print(tuple_one.value_from(16, 32)) # (16, 32)
-        >>> print(tuple_one.value_from([16, 32])) # (16, 32)
-        >>> print(tuple_two.value_from((16, 32), -16)) # ((16,32), -16)
-        >>> print(tuple_two.value_from([(16, 32), -16])) # ((16,32), -16)
+            >>> import ecdypy as ec
+            >>> tuple_one = ec.Tuple(ec.RTypes.u16, ec.RTypes.u16)
+            >>> tuple_two = ec.Tuple((ec.RTypes.i16, ec.RTypes.u16), ec.RTypes.i32)
+            >>> \n
+            >>> print(tuple_one.value_from(16, 32)) # (16, 32)
+            >>> print(tuple_one.value_from([16, 32])) # (16, 32)
+            >>> print(tuple_two.value_from((16, 32), -16)) # ((16,32), -16)
+            >>> print(tuple_two.value_from([(16, 32), -16])) # ((16,32), -16)
 
         Args:
             *args:
@@ -561,15 +522,13 @@ class Tuple(_TYPE_):
     def get_types(self) -> list[str]:
         """Returns the type tree of the Tuple.
 
-        :return: _description_
+        :return: List of type names as str.
         :rtype: list[str]
         """
         return self._type_tree
 
     def __str__(self):
         """Generates the string representation of the tuple.
-
-
         :return: str. String representation of tuple.
         :rtype: str
         """
@@ -597,14 +556,14 @@ class Struct(_TYPE_, _DECLARABLE_):
     Implementation per: https://doc.rust-lang.org/book/ch05-01-defining-structs.html
 
     Examples:
-    >>> import ecdypy as ec
-    >>> struct_one = ec.Struct({"A": "u8", "B": "u16"}, name="my_struct")
-    >>> print(struct_one) # my_struct
-    >>> print(struct_one.get_declaration())
-    >>> # struct struct_one {
-    >>> #   A: u8,
-    >>> #    B: u16
-    >>> # }
+        >>> import ecdypy as ec
+        >>> struct_one = ec.Struct({"A": "u8", "B": "u16"}, name="my_struct")
+        >>> print(struct_one) # my_struct
+        >>> print(struct_one.get_declaration())
+        >>> # struct struct_one {
+        >>> #   A: u8,
+        >>> #    B: u16
+        >>> # }
 
     """
 
@@ -734,7 +693,7 @@ class Struct(_TYPE_, _DECLARABLE_):
                 value = Tuple(list(arg[1]))
                 buf.append((arg[0], value))
             else:
-                buf.append((arg[0], normalize_arg_type(arg[1])))
+                buf.append((arg[0], _normalize_arg_type(arg[1])))
         return buf
 
     def is_ok(self, *args: _TYPE_, **kwargs):
@@ -809,30 +768,29 @@ class Struct(_TYPE_, _DECLARABLE_):
         """Filters a given set of values through their constraints of their respective type in the Struct's attributes.
 
         Examples:
-        >>> import ecdypy as ec
-        >>> struct_one = ec.Struct({"A": "u8", "B": "u16"}, name="my_struct")
-        >>> print(struct_one.value_from({"A": 16, "B": 16}))
-        >>> # struct_one {A: 16,B: 16,};
-        ____
-        >>> struct_two = Struct(
-        >>>     {"A": RTypes.u16, "B": RTypes.str}, {"C": RTypes.i8},
-        >>>     name=struct_two_name
-        >>> )
-        >>> print(struct_two.value_from({"A": 32, "B": "foo", "C": -10}))
-        >>> # struct_two {A: 32,B: 'foo',C: -10,};
+            >>> import ecdypy as ec
+            >>> struct_one = ec.Struct({"A": "u8", "B": "u16"}, name="my_struct")
+            >>> print(struct_one.value_from({"A": 16, "B": 16}))
+            >>> # struct_one {A: 16,B: 16,};
+            ____
+            >>> struct_two = Struct(
+            >>>     {"A": RTypes.u16, "B": RTypes.str}, {"C": RTypes.i8},
+            >>>     name=struct_two_name
+            >>> )
+            >>> print(struct_two.value_from({"A": 32, "B": "foo", "C": -10}))
+            >>> # struct_two {A: 32,B: 'foo',C: -10,};
+
+            Args:
+                *args:
+                    _TYPE_: An object that implements the _TYPE_ interface.
+
+                    list[_TYPE_]: A list of objects that implement the _TYPE_ interface.
 
 
-        Args:
-            *args:
-                _TYPE_: An object that implements the _TYPE_ interface.
-
-                list[_TYPE_]: A list of objects that implement the _TYPE_ interface.
-
-
-        :raises UnknownArgKeys: Unknown key/field given in struct instantiation.
-        :raises AttributesNotSatisfied: Key/Field not satisfied in struct instantiation.
-        :return: Initialization string for Struct with the given values.
-        :rtype: str
+            :raises UnknownArgKeys: Unknown key/field given in struct instantiation.
+            :raises AttributesNotSatisfied: Key/Field not satisfied in struct instantiation.
+            :return: Initialization string for Struct with the given values.
+            :rtype: str
         """
         try:
             arg_vals = Struct._convert_arg_format(list(args))
@@ -879,28 +837,28 @@ class Struct(_TYPE_, _DECLARABLE_):
         """Get the string representation of the Struct's declaration.
 
         Examples:
-        >>> import ecdypy as ec
-        >>> struct_one = ec.Struct({"A": "u8", "B": "u16"}, name="my_struct")
-        >>> print(struct_one.get_declaration())
-        >>> # struct struct_one {
-        >>> #   A: u8,
-        >>> #   B: u16
-        >>> # }
-        ____
-        >>> struct_two = Struct(
-        >>>     {"A": RTypes.u16, "B": RTypes.str}, {"C": RTypes.i8},
-        >>>     name=split
-        >>> )
-        >>> print(struct_two.get_declaration())
-        >>> # struct split {
-        >>> #   A: u16,
-        >>> #   B: str,
-        >>> #   C: i8
-        >>> # }
+            >>> import ecdypy as ec
+            >>> struct_one = ec.Struct({"A": "u8", "B": "u16"}, name="my_struct")
+            >>> print(struct_one.get_declaration())
+            >>> # struct struct_one {
+            >>> #   A: u8,
+            >>> #   B: u16
+            >>> # }
+            ____
+            >>> struct_two = Struct(
+            >>>     {"A": RTypes.u16, "B": RTypes.str}, {"C": RTypes.i8},
+            >>>     name=split
+            >>> )
+            >>> print(struct_two.get_declaration())
+            >>> # struct split {
+            >>> #   A: u16,
+            >>> #   B: str,
+            >>> #   C: i8
+            >>> # }
 
         :param __formatter: _description_, defaults to default_formatter
         :type __formatter: Formatter, optional
-        :return: _description_
+        :return: String representing the declaration of the Struct.
         :rtype: str
         """
         buf = []
