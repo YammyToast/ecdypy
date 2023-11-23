@@ -13,7 +13,7 @@ from .rtypes import (
     Struct,
     IncorrectArgCount,
     InvalidName,
-    normalize_arg_type,
+    _normalize_arg_type,
 )
 
 
@@ -81,7 +81,7 @@ class Variable(_DECLARABLE_):
                 else -1
             )
         if (t := arg_dict["type"]) != None:
-            t = normalize_arg_type(t)
+            t = _normalize_arg_type(t)
 
             if (v := arg_dict["value"]) != None:
                 arg_dict["value"] = Variable._match_value(t, v)

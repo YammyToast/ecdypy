@@ -63,6 +63,15 @@ class CodeText(CodeObject):
     def __init__(self, __text: str | list[str] | None = None):
         """CodeText Constructor
 
+        Examples:
+            >>> import ecdypy as ec
+            >>> cwr = ec.CodeWriter()
+            >>> text = ec.CodeText("my_text")
+            >>> cwr.add(text)
+            >>> print(cwr)
+
+
+
         :param __text: str | list[str]. Text to add to the CodeWriter tree, defaults to None
         """
         self._text = deque()
@@ -71,6 +80,16 @@ class CodeText(CodeObject):
         super().__init__(1)
 
     def add_text(self, __text: str | list[str] | CodeText | None = None) -> None:
+        """Append text to the text buffer.
+
+        Can be used to combine CodeTexts.
+
+        Examples:
+            >>>
+
+        :param __text: str | list[str] | CodeText. Text to be appended, defaults to None
+        :type __text: str | list[str] | CodeText | None, optional
+        """
         try:
             if type(__text) is str:
                 self._text.append(__text)
@@ -108,10 +127,36 @@ class CodeText(CodeObject):
 
 class CodeWriter:
     def __init__(
-        self, __formatter: Formatter = default_formatter, __init: deque | None = None
+        self, __init: deque | None = None, __formatter: Formatter = default_formatter
     ):
+        """_summary_
+
+        Examples:
+            >>> cwr_one = ec.CodeWriter("my_text")
+            >>> cwr_two = ec.CodeWriter(["my", "text"])
+            >>> cwr_three = ec.CodeWriter(cwr_two)
+            >>> print(cwr_one) # my_text
+            >>> print(cwr_two) # my
+            >>>                # text
+            >>> print(cwr_three) # my
+            >>>                  # text
+
+
+        :param __init: _description_, defaults to None
+        :type __init: deque | None, optional
+        :param __formatter: _description_, defaults to default_formatter
+        :type __formatter: Formatter, optional
+        """
         self._formatter = __formatter
-        self._code_obj_tree = deque() if __init is None else __init
+        init = __init
+        if isinstance(init, CodeWriter):
+            self._code_obj_tree = init._code_obj_tree
+        elif isinstance(init, list):
+            self._code_obj_tree = deque(init)
+        elif init != None:
+            self._code_obj_tree = deque([init])
+        else:
+            self._code_obj_tree = deque()
 
     def add(self, __object: str | Iterable[CodeObject] | CodeText):
         try:

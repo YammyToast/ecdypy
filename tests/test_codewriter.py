@@ -73,6 +73,3 @@ def test_codewriter_concat():
 
     cwri += cwri2
     assert len(cwri) == 2
-
-
-test_codewriter_add_autogen_comment()
