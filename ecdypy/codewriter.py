@@ -28,6 +28,8 @@ default_formatter = Formatter(
 
 
 class _DECLARABLE_(ABC):
+    """Base Class Interface for CodeObjects that can be declared separately from their normal representation."""
+
     def __init__(self):
         pass
 
@@ -37,7 +39,7 @@ class _DECLARABLE_(ABC):
 
 
 class CodeObject(ABC):
-    """Base Class for code constructs to ensure the CodeWriter can handle them correctly."""
+    """Base Class Interface for generated CodeObjects to ensure the CodeWriter can handle them correctly."""
 
     def __init__(self, __priority: int = -1):
         self._priority = __priority
@@ -52,12 +54,17 @@ class CodeText(CodeObject):
 
     Examples:
         >>> import ecdypy as ec
-        >>> cwr = ec.CodeWriter()
-        >>> text = CodeText("Sample Text 1")
+        >>> text = ec.CodeText("Sample Text 1")
         >>> text.add_text()
         >>> text.add_text("Paragraph 1")
         >>> text += "Line 1"
         >>> text = text + "Line 2"
+        >>> print(text)
+        >>> # Sample Text 1
+        >>> #
+        >>> # Paragraph 1
+        >>> # Line 1
+        >>> # Line 2
     """
 
     def __init__(self, __text: str | list[str] | None = None):
@@ -69,8 +76,7 @@ class CodeText(CodeObject):
             >>> text = ec.CodeText("my_text")
             >>> cwr.add(text)
             >>> print(cwr)
-
-
+            >>> # my_text
 
         :param __text: str | list[str]. Text to add to the CodeWriter tree, defaults to None
         """
@@ -85,7 +91,18 @@ class CodeText(CodeObject):
         Can be used to combine CodeTexts.
 
         Examples:
-            >>>
+            >>> import ecdypy as ec
+            >>> text = CodeText("Sample Text 1")
+            >>> text.add_text()
+            >>> text.add_text("Paragraph 1")
+            >>> text += "Line 1"
+            >>> text = text + "Line 2"
+            >>> print(text)
+            >>> # Sample Text 1
+            >>> #
+            >>> # Paragraph 1
+            >>> # Line 1
+            >>> # Line 2
 
         :param __text: str | list[str] | CodeText. Text to be appended, defaults to None
         :type __text: str | list[str] | CodeText | None, optional
@@ -107,25 +124,44 @@ class CodeText(CodeObject):
             print(f"Type: '{type(__text)}' not defined for CodeText.")
 
     def __add__(self, __other: str | list[str]) -> CodeText:
+        """Add text to the CodeText"""
         return CodeText(self._text + __other)
 
     def __str__(self, __formatter: Formatter = default_formatter) -> str:
+        """Read from the CodeText buffer."""
         buf = [str(x) for x in self._text]
         return __formatter._separator.join(buf)
 
     def __add__(self, __other):
+        """Add text to the CodeText"""
         self.add_text(__other)
         return CodeText(self)
 
     def __iadd__(self, __other):
+        """Append text to the CodeText"""
         self.add_text(__other)
         return CodeText(self)
 
     def __len__(self):
+        """Return the number of lines in the buffer."""
         return len(self._text)
 
 
 class CodeWriter:
+    """Container class for ecdypy CodeObjects.
+
+    :class:`CodeWriter`
+
+    Examples:
+        >>> import ecdypy as ec
+        >>> cwr = ec.CodeWriter()
+        >>> text = CodeText("Sample Text 1")
+        >>> text.add_text()
+        >>> text.add_text("Paragraph 1")
+        >>> text += "Line 1"
+        >>> text = text + "Line 2"
+    """
+
     def __init__(
         self, __init: deque | None = None, __formatter: Formatter = default_formatter
     ):
@@ -138,9 +174,7 @@ class CodeWriter:
             >>> print(cwr_one) # my_text
             >>> print(cwr_two) # my
             >>>                # text
-            >>> print(cwr_three) # my
-            >>>                  # text
-
+            >>> assert str(cwr_two) == str(cwr_three)
 
         :param __init: _description_, defaults to None
         :type __init: deque | None, optional
@@ -159,8 +193,27 @@ class CodeWriter:
             self._code_obj_tree = deque()
 
     def add(self, __object: str | Iterable[CodeObject] | CodeText):
+        """Add a CodeObject to the CodeWriter tree.
+
+        Items must be implementations of CodeObject, or be plain text.
+
+        Examples:
+            >>> import ecdypy as ec
+            >>> cwr = ec.CodeWriter()
+            >>> text = ec.CodeText("Sample Text 1")
+            >>> cwr.add([text, "More Text"])
+            >>> print(cwr)
+
+        :param __object: Item(s) to add to the CodeWriter tree.
+        :type __object: str | Iterable[CodeObject] | CodeText
+        :raises TypeError: Type of item(s) cannot be added to the CodeWriter tree.
+        """
         try:
             object = CodeText("")
+            if isinstance(__object, list):
+                for item in __object:
+                    self.add(item)
+                return
             if type(__object) is str:
                 object = CodeText(__object)
             elif type(__object) is CodeWriter:
@@ -181,6 +234,34 @@ class CodeWriter:
     def add_auto_gen_comment(
         self, __license: str | None = None, __author: str | list[str] | None = None
     ):
+        """Add a comment indicating that the code was autogenerated by a script.
+
+        This can include the license that the generated code falls under, as well as the authors
+        of the generating script.
+
+        Examples:
+            >>> import ecdypy as ec
+            >>> cwr = ec.CodeWriter()
+            >>> cwr.add_auto_gen_comment(
+            >>>     "MIT",
+            >>>     [
+            >>>         "Author_1 <author@mail.com>",
+            >>>         "Author 2 <author2@book.com>",
+            >>>     ],
+            >>> )
+            >>> print(cwr)
+            >>> # /*
+            >>> # This code was automatically generated using ecdypy 0.1
+            >>> # ecdypy source code is available at: https://github.com/YammyToast/ecdypy
+            >>> # Author(s): Author_1 <author@mail.com>, Author 2 <author2@book.com>
+            >>> # This code is licensed under: MIT
+            >>> # */
+
+        :param __license: package license, defaults to None
+        :type __license: str | None, optional
+        :param __author: author or list of authors (and emails), defaults to None
+        :type __author: str | list[str] | None, optional
+        """
         text = CodeText("/*")
         text.add_text(
             f"This code was automatically generated using ecdypy {__version__}"
@@ -196,6 +277,13 @@ class CodeWriter:
         self.add(text)
 
     def __str__(self):
+        """Output the contents of the CodeWriter tree.
+
+        The generated string will be the code representation of all CodeObjects added to the CodeWriter.
+
+        :return: _description_
+        :rtype: _type_
+        """
         buf = [str(x) for x in self._code_obj_tree]
         return self._formatter._separator.join(buf)
 

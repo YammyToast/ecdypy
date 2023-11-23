@@ -323,7 +323,7 @@ class Tuple(_TYPE_):
         >>> my_value = my_variable.value_from(16, 32)
         >>> print(my_value) # (16, 32)
         >>> print(my_variable.get_declaration()) # let my_var: (u16, u16);
-        >>>
+        >>> \n
         >>> complex_tuple = ec.Tuple(ec.RTypes.u8, my_tuple)
         >>> complex_variable = ec.Variable("complex", complex_tuple)
         >>> print(complex_variable.get_declaration()) # let complex: (u8, (u16, u16))
@@ -436,11 +436,11 @@ class Tuple(_TYPE_):
             >>> assert tuple_one.is_ok([16, 16]) == True # ! THROWS ERROR
             >>> assert tuple_two.is_ok((16, 16), 32) == True
 
-        Args:
-            *args:
-                _TYPE_: An object that implements the _TYPE_ interface.
+            Args:
+                *args:
+                    _TYPE_: An object that implements the _TYPE_ interface.
 
-                list[_TYPE_]: A list of objects that implement the _TYPE_ interface.
+                    list[_TYPE_]: A list of objects that implement the _TYPE_ interface.
 
 
         :return: bool. True if the given values fit within the Tuple's types constraints. False otherwise.
@@ -481,11 +481,11 @@ class Tuple(_TYPE_):
             >>> print(tuple_two.value_from((16, 32), -16)) # ((16,32), -16)
             >>> print(tuple_two.value_from([(16, 32), -16])) # ((16,32), -16)
 
-        Args:
-            *args:
-                _TYPE_: An object that implements the _TYPE_ interface.
+            Args:
+                *args:
+                    _TYPE_: An object that implements the _TYPE_ interface.
 
-                list[_TYPE_]: A list of objects that implement the _TYPE_ interface.
+                    list[_TYPE_]: A list of objects that implement the _TYPE_ interface.
 
 
         :raises IncorrectArgCount: Raised when the number of input values does not match the number of types in the tuple.
@@ -592,7 +592,7 @@ class Struct(_TYPE_, _DECLARABLE_):
             >>> #   A: u8,
             >>> #   B: u16
             >>> # }
-            ____
+            >>> \n
             >>> struct_two = Struct(
             >>>     {"A": RTypes.u16, "B": RTypes.str}, {"C": RTypes.i8},
             >>>     name=split
@@ -703,18 +703,18 @@ class Struct(_TYPE_, _DECLARABLE_):
             >>> import ecdypy as ec
             >>> struct_one = ec.Struct({"A": "u8", "B": "u16"}, name="my_struct")
             >>> assert struct_one.is_ok({"A": 16, "B": 16}) == True
-            ____
+            >>> \n
             >>> struct_two = Struct(
             >>>     {"A": RTypes.u16, "B": RTypes.str}, {"C": RTypes.i8},
             >>>     name=struct_two_name
             >>> )
             >>> assert struct_two.is_ok({"A": 32, "B": "foo", "C": -10}) == True
 
-        Args:
-            *args:
-                _TYPE_: An object that implements the _TYPE_ interface.
+            Args:
+                *args:
+                    _TYPE_: An object that implements the _TYPE_ interface.
 
-                list[_TYPE_]: A list of objects that implement the _TYPE_ interface.
+                    list[_TYPE_]: A list of objects that implement the _TYPE_ interface.
 
 
         :return: bool. True if the given values fit within the Struct's types constraints. False otherwise.
@@ -772,7 +772,7 @@ class Struct(_TYPE_, _DECLARABLE_):
             >>> struct_one = ec.Struct({"A": "u8", "B": "u16"}, name="my_struct")
             >>> print(struct_one.value_from({"A": 16, "B": 16}))
             >>> # struct_one {A: 16,B: 16,};
-            ____
+            >>> \n
             >>> struct_two = Struct(
             >>>     {"A": RTypes.u16, "B": RTypes.str}, {"C": RTypes.i8},
             >>>     name=struct_two_name
@@ -844,7 +844,7 @@ class Struct(_TYPE_, _DECLARABLE_):
             >>> #   A: u8,
             >>> #   B: u16
             >>> # }
-            ____
+            >>> \n
             >>> struct_two = Struct(
             >>>     {"A": RTypes.u16, "B": RTypes.str}, {"C": RTypes.i8},
             >>>     name=split
