@@ -9,10 +9,12 @@ ecdypy
 
 ecdypy is a Python3 package that helps you generate Rust (https://www.rust-lang.org/) code with Python.
 
+
 .. toctree::
    :maxdepth: 2
 
    contributing
+
 
 Documentation
 =============
@@ -33,3 +35,4 @@ Examples
    :maxdepth: 2
 
    Examples <examples>
+
