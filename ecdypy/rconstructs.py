@@ -26,6 +26,19 @@ class InvalidMacroArg(Exception):
 
 
 class Variable(_DECLARABLE_):
+    """Class for creating Rust Variables.
+
+    Variables can be declared/initialized as well as be used as any 'value' argument.
+
+    Examples:
+        >>> import ecdypy as ec
+        >>> variable_one = ec.Variable("my_var_1", ec.RTypes.i32, 10)
+        >>> print(variable_one) # my_var_1
+        >>> print(variable_one.get_declaration())
+        >>> # let my_var_1: i32 = 10;
+
+    """
+
     def __init__(self, *args, **kwargs) -> None:
         try:
             arg_vals = Variable._parse_args(list(args), kwargs)

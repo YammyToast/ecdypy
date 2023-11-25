@@ -9,6 +9,7 @@ from .rtypes import Struct
 from .rconstructs import Variable
 
 from .macros import Derive
+from .macros import Macro
 
 __all__ = (
     "CodeObject",
@@ -21,4 +22,5 @@ __all__ = (
     "Variable",
     "Decorator",
     "Derive",
+    "Macro",
 )
