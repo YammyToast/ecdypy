@@ -7,7 +7,7 @@ from .rtypes import _TYPE_
 from .rtypes import Tuple
 from .rtypes import Struct
 from .rconstructs import Variable
-
+from .rconstructs import Function
 from .macros import Derive
 from .macros import Macro
 
@@ -20,6 +20,7 @@ __all__ = (
     "Tuple",
     "Struct",
     "Variable",
+    "Function",
     "Decorator",
     "Derive",
     "Macro",

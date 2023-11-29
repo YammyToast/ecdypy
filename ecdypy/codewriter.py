@@ -38,6 +38,17 @@ class _DECLARABLE_(ABC):
         pass
 
 
+class _DEFINABLE_(ABC):
+    """Base Class Interface for CodeObjects that can be declared separately from their normal representation."""
+
+    def __init__(self):
+        pass
+
+    @abstractmethod
+    def get_definition(self, __formatter: Formatter = default_formatter):
+        pass
+
+
 class CodeObject(ABC):
     """Base Class Interface for generated CodeObjects to ensure the CodeWriter can handle them correctly."""
 
