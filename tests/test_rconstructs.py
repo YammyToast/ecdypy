@@ -1,6 +1,6 @@
 from ecdypy.macros import Macro, Derive
 from ecdypy.rtypes import RTypes, Tuple, Struct
-from ecdypy.rconstructs import Variable
+from ecdypy.rconstructs import Variable, Function
 import sys
 import os
 
@@ -67,3 +67,39 @@ def test_variables_extra():
 
 # ==============================================================================================
 # ==============================================================================================
+
+
+def test_functions_init():
+
+    my_parameter_map = [{"name": RTypes.str, "password": RTypes.str, "age": RTypes.u8}]
+
+    my_func = Function("login", my_parameter_map, RTypes.str)
+    assert str(my_func) == "login"
+    assert (
+        my_func.get_declaration()
+        == "fn login(name: str, password: str, age: u8) -> str;"
+    )
+    assert (
+        my_func.get_definition()
+        == """fn login(name: str, password: str, age: u8) -> str {\n}"""
+    )
+
+    my_alt = Function(name="alt_login", parameters=my_parameter_map, returns=RTypes.str)
+    assert str(my_alt) == "alt_login"
+    assert (
+        my_alt.get_declaration()
+        == "fn alt_login(name: str, password: str, age: u8) -> str;"
+    )
+    assert (
+        my_alt.get_definition()
+        == """fn alt_login(name: str, password: str, age: u8) -> str {\n}"""
+    )
+
+    my_short = Function("short")
+    assert str(my_short) == "short"
+    assert my_short.get_declaration() == "fn short();"
+    assert my_short.get_definition() == "fn short() {\n}"
+
+
+def test_functions_add():
+    print("test")

@@ -7,7 +7,13 @@ from collections import deque
 
 import re
 
-from .codewriter import Formatter, default_formatter, _DECLARABLE_, _DEFINABLE_
+from .codewriter import (
+    Formatter,
+    default_formatter,
+    _DECLARABLE_,
+    _DEFINABLE_,
+    _CONTAINER_,
+)
 from .rtypes import (
     _TYPE_,
     RTypes,
@@ -162,7 +168,7 @@ class Variable(_DECLARABLE_):
 # ==============================================================================================
 
 
-class Function(_DECLARABLE_, _DEFINABLE_):
+class Function(_DECLARABLE_, _DEFINABLE_, _CONTAINER_):
     def __init__(self, *args, **kwargs) -> None:
         try:
             arg_vals = Function._parse_args(list(args), kwargs)
@@ -178,6 +184,7 @@ class Function(_DECLARABLE_, _DEFINABLE_):
             self._parameters = parameters
             self._returns = returns
             self._code_obj_tree = deque()
+            super(_CONTAINER_, self).__init__()
 
         except InvalidName as e:
             traceback.print_stack()
@@ -246,10 +253,11 @@ class Function(_DECLARABLE_, _DEFINABLE_):
 
         """THIS LOOKS SO GOOD, GOOD JOB ME FOR SURE!"""
         buf = f"fn {self._name}("
-        for param in self._parameters:
-            typ = param[1].value if isinstance(param[1], RTypes) else param[1]
-            buf += f"{str(param[0])}: {str(typ)}, "
-        buf = buf.strip(", ")
+        if self._parameters != None:
+            for param in self._parameters:
+                typ = param[1].value if isinstance(param[1], RTypes) else param[1]
+                buf += f"{str(param[0])}: {str(typ)}, "
+            buf = buf.strip(", ")
         buf += f")"
 
         if self._returns != None:
@@ -258,7 +266,8 @@ class Function(_DECLARABLE_, _DEFINABLE_):
                 if isinstance(self._returns, RTypes)
                 else self._returns
             )
-            buf += f" -> {typ};"
+            buf += f" -> {typ}"
+        buf += f";"
         return buf
 
     def __str__(self):

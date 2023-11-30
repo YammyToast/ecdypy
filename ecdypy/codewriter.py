@@ -49,6 +49,11 @@ class _DEFINABLE_(ABC):
         pass
 
 
+class _CONTAINER_(object):
+    def __init__(self):
+        self._code_obj_tree = deque()
+
+
 class CodeObject(ABC):
     """Base Class Interface for generated CodeObjects to ensure the CodeWriter can handle them correctly."""
 
@@ -158,7 +163,7 @@ class CodeText(CodeObject):
         return len(self._text)
 
 
-class CodeWriter:
+class CodeWriter(_CONTAINER_):
     """Container class for ecdypy CodeObjects.
 
     :class:`CodeWriter`
@@ -193,6 +198,7 @@ class CodeWriter:
         :type __formatter: Formatter, optional
         """
         self._formatter = __formatter
+        super().__init__()
         init = __init
         if isinstance(init, CodeWriter):
             self._code_obj_tree = init._code_obj_tree
