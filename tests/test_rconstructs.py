@@ -76,29 +76,29 @@ def test_functions_init():
     my_func = Function("login", my_parameter_map, RTypes.str)
     assert str(my_func) == "login"
     assert (
-        my_func.get_declaration()
+        str(my_func.get_declaration())
         == "fn login(name: str, password: str, age: u8) -> str;"
     )
     assert (
-        my_func.get_definition()
+        str(my_func.get_definition())
         == """fn login(name: str, password: str, age: u8) -> str {\n}"""
     )
 
     my_alt = Function(name="alt_login", parameters=my_parameter_map, returns=RTypes.str)
     assert str(my_alt) == "alt_login"
     assert (
-        my_alt.get_declaration()
+        str(my_alt.get_declaration())
         == "fn alt_login(name: str, password: str, age: u8) -> str;"
     )
     assert (
-        my_alt.get_definition()
+        str(my_alt.get_definition())
         == """fn alt_login(name: str, password: str, age: u8) -> str {\n}"""
     )
 
     my_short = Function("short")
     assert str(my_short) == "short"
-    assert my_short.get_declaration() == "fn short();"
-    assert my_short.get_definition() == "fn short() {\n}"
+    assert str(my_short.get_declaration()) == "fn short();"
+    assert str(my_short.get_definition()) == "fn short() {\n}"
 
 
 def test_functions_add():

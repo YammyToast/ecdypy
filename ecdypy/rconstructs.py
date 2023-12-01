@@ -13,6 +13,7 @@ from .codewriter import (
     _DECLARABLE_,
     _DEFINABLE_,
     _CONTAINER_,
+    LazyString,
 )
 from .rtypes import (
     _TYPE_,
@@ -168,7 +169,7 @@ class Variable(_DECLARABLE_):
 # ==============================================================================================
 
 
-class Function(_DECLARABLE_, _DEFINABLE_, _CONTAINER_):
+class Function(_CONTAINER_, _DECLARABLE_, _DEFINABLE_):
     def __init__(self, *args, **kwargs) -> None:
         try:
             arg_vals = Function._parse_args(list(args), kwargs)
@@ -183,8 +184,7 @@ class Function(_DECLARABLE_, _DEFINABLE_, _CONTAINER_):
             self._name = name
             self._parameters = parameters
             self._returns = returns
-            self._code_obj_tree = deque()
-            super(_CONTAINER_, self).__init__()
+            super().__init__()
 
         except InvalidName as e:
             traceback.print_stack()
@@ -240,8 +240,15 @@ class Function(_DECLARABLE_, _DEFINABLE_, _CONTAINER_):
         return buf
 
     def get_definition(self, __formatter: Formatter = default_formatter):
+        return LazyString(self, self._get_definition)
+
+    def get_declaration(self, __formatter: Formatter = default_formatter):
+        print(getattr(self, "_get_declaration"))
+        return LazyString(self, getattr(self, "_get_declaration"))
+
+    def _get_definition(self, __formatter: Formatter = default_formatter):
         """THIS LOOKS SO GOOD, GOOD JOB ME FOR SURE!"""
-        buf = self.get_declaration().strip(";")
+        buf = self._get_declaration().strip(";")
         buf += f" {{{__formatter._separator}"
 
         for line in self._code_obj_tree:
@@ -249,8 +256,7 @@ class Function(_DECLARABLE_, _DEFINABLE_, _CONTAINER_):
         buf += f"}}"
         return buf
 
-    def get_declaration(self, __formatter: Formatter = default_formatter):
-
+    def _get_declaration(self, __formatter: Formatter = default_formatter):
         """THIS LOOKS SO GOOD, GOOD JOB ME FOR SURE!"""
         buf = f"fn {self._name}("
         if self._parameters != None:

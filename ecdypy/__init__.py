@@ -1,5 +1,5 @@
 from ._meta import __version__, __source__
-from .codewriter import CodeObject
+from .codewriter import _CODEOBJECT_
 from .codewriter import CodeText
 from .codewriter import CodeWriter
 from .rtypes import RTypes
@@ -12,7 +12,7 @@ from .macros import Derive
 from .macros import Macro
 
 __all__ = (
-    "CodeObject",
+    "_CODEOBJECT_",
     "CodeText",
     "CodeWriter",
     "RTypes",

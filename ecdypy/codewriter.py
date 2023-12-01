@@ -50,11 +50,63 @@ class _DEFINABLE_(ABC):
 
 
 class _CONTAINER_(object):
-    def __init__(self):
-        self._code_obj_tree = deque()
+    def __init__(self, __init=None):
+        init = __init
+        if isinstance(init, CodeWriter):
+            self._code_obj_tree = init._code_obj_tree
+        elif isinstance(init, list):
+            self._code_obj_tree = deque(init)
+        elif init != None:
+            self._code_obj_tree = deque([init])
+        else:
+            self._code_obj_tree = deque()
+
+    def add(self, __other: str | _CODEOBJECT_ | list[_CODEOBJECT_] | _CONTAINER_):
+        """Add a CodeObject to the Container's tree.
+
+        Items must be implementations of CodeObject, or be plain text.
+
+        Examples:
+            >>> import ecdypy as ec
+            >>> cwr = ec.CodeWriter()
+            >>> text = ec.CodeText("Sample Text 1")
+            >>> cwr.add([text, "More Text"])
+            >>> print(cwr)
+
+        :param __object: Item(s) to add to the CodeWriter tree.
+        :type __object: str | Iterable[CodeObject] | CodeText
+        :raises TypeError: Type of item(s) cannot be added to the CodeWriter tree.
+        """
+        try:
+            object = None
+
+            if isinstance(__other, list):
+                for item in __other:
+                    self.add(item)
+                return
+
+            if isinstance(__other, str):
+                object = CodeText(__other)
+
+            elif isinstance(__other) is _CONTAINER_:
+                self._code_obj_tree.extend(__other._code_obj_tree)
+                return
+            elif (
+                isinstance(__other) is _CODEOBJECT_ or isinstance(__other) is LazyString
+            ):
+                object = __other
+            else:
+                raise TypeError
+
+            if object != None:
+                self._code_obj_tree.append(object)
+
+        except TypeError as e:
+            print(f"No Implementation for adding type '{type(__other)}' to CodeWriter.")
+            raise
 
 
-class CodeObject(ABC):
+class _CODEOBJECT_(ABC):
     """Base Class Interface for generated CodeObjects to ensure the CodeWriter can handle them correctly."""
 
     def __init__(self, __priority: int = -1):
@@ -65,7 +117,20 @@ class CodeObject(ABC):
         pass
 
 
-class CodeText(CodeObject):
+@dataclass
+class LazyString(_CODEOBJECT_):
+    _obj: _DECLARABLE_ | _DEFINABLE_
+    _method: function
+
+    def __str__(self) -> str:
+        return self._method()
+
+
+# ==============================================================================================
+# ==============================================================================================
+
+
+class CodeText(_CODEOBJECT_, _CONTAINER_):
     """CodeObject implementation for assisting with raw-text code constructs.
 
     Examples:
@@ -99,7 +164,10 @@ class CodeText(CodeObject):
         self._text = deque()
         if __text != None:
             self.add_text(__text)
-        super().__init__(1)
+        # super(_CODEOBJECT_, self).__init__(1)
+        _CODEOBJECT_.__init__(self, 1)
+        _CONTAINER_.__init__(self)
+        # super(_CONTAINER_, self).__init__()
 
     def add_text(self, __text: str | list[str] | CodeText | None = None) -> None:
         """Append text to the text buffer.
@@ -163,6 +231,10 @@ class CodeText(CodeObject):
         return len(self._text)
 
 
+# ==============================================================================================
+# ==============================================================================================
+
+
 class CodeWriter(_CONTAINER_):
     """Container class for ecdypy CodeObjects.
 
@@ -198,18 +270,9 @@ class CodeWriter(_CONTAINER_):
         :type __formatter: Formatter, optional
         """
         self._formatter = __formatter
-        super().__init__()
-        init = __init
-        if isinstance(init, CodeWriter):
-            self._code_obj_tree = init._code_obj_tree
-        elif isinstance(init, list):
-            self._code_obj_tree = deque(init)
-        elif init != None:
-            self._code_obj_tree = deque([init])
-        else:
-            self._code_obj_tree = deque()
+        _CONTAINER_.__init__(self)
 
-    def add(self, __object: str | Iterable[CodeObject] | CodeText):
+    def add(self, __object: str | Iterable[_CODEOBJECT_] | CodeText):
         """Add a CodeObject to the CodeWriter tree.
 
         Items must be implementations of CodeObject, or be plain text.
@@ -304,7 +367,7 @@ class CodeWriter(_CONTAINER_):
         buf = [str(x) for x in self._code_obj_tree]
         return self._formatter._separator.join(buf)
 
-    def __add__(self, __other: str | Iterable[CodeObject] | CodeText):
+    def __add__(self, __other: str | Iterable[_CODEOBJECT_] | CodeText):
         self.add(__other)
         return self
 
