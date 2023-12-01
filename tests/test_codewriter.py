@@ -10,6 +10,8 @@ sys.path.append(parent)
 
 
 from ecdypy.codewriter import CodeWriter, CodeText, default_formatter
+from ecdypy.rconstructs import Function
+from ecdypy.rtypes import RTypes
 
 # ==============================================================================================
 # ==============================================================================================
@@ -73,3 +75,14 @@ def test_codewriter_concat():
 
     cwri += cwri2
     assert len(cwri) == 2
+
+
+def test_codewriter_container():
+    cwr = CodeWriter()
+    my_parameter_map = [{"name": RTypes.str, "password": RTypes.str, "age": RTypes.u8}]
+
+    my_func = Function("login", my_parameter_map, RTypes.str)
+    my_func.add("TEst")
+
+    cwr.add(my_func.get_definition())
+    print(cwr)

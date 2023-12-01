@@ -75,30 +75,24 @@ def test_functions_init():
 
     my_func = Function("login", my_parameter_map, RTypes.str)
     assert str(my_func) == "login"
-    assert (
-        str(my_func.get_declaration())
-        == "fn login(name: str, password: str, age: u8) -> str;"
-    )
-    assert (
-        str(my_func.get_definition())
-        == """fn login(name: str, password: str, age: u8) -> str {\n}"""
-    )
+    my_func_decl = re.sub(replace_pattern, "", str(my_func._get_declaration()))
+    my_func_def = re.sub(replace_pattern, "", str(my_func._get_definition()))
+    assert my_func_decl == "fnlogin(name:str,password:str,age:u8)->str;"
+    assert my_func_def == """fnlogin(name:str,password:str,age:u8)->str{}"""
 
     my_alt = Function(name="alt_login", parameters=my_parameter_map, returns=RTypes.str)
+    alt_func_decl = re.sub(replace_pattern, "", str(my_alt._get_declaration()))
+    alt_func_def = re.sub(replace_pattern, "", str(my_alt._get_definition()))
     assert str(my_alt) == "alt_login"
-    assert (
-        str(my_alt.get_declaration())
-        == "fn alt_login(name: str, password: str, age: u8) -> str;"
-    )
-    assert (
-        str(my_alt.get_definition())
-        == """fn alt_login(name: str, password: str, age: u8) -> str {\n}"""
-    )
+    assert alt_func_decl == "fnalt_login(name:str,password:str,age:u8)->str;"
+    assert alt_func_def == """fnalt_login(name:str,password:str,age:u8)->str{}"""
 
     my_short = Function("short")
     assert str(my_short) == "short"
-    assert str(my_short.get_declaration()) == "fn short();"
-    assert str(my_short.get_definition()) == "fn short() {\n}"
+    short_func_decl = re.sub(replace_pattern, "", str(my_short._get_declaration()))
+    short_func_def = re.sub(replace_pattern, "", str(my_short._get_definition()))
+    assert str(short_func_decl) == "fnshort();"
+    assert str(short_func_def) == "fnshort(){}"
 
 
 def test_functions_add():

@@ -87,13 +87,12 @@ class _CONTAINER_(object):
 
             if isinstance(__other, str):
                 object = CodeText(__other)
-
-            elif isinstance(__other) is _CONTAINER_:
+            elif isinstance(__other, CodeText):
+                object = __other
+            elif isinstance(__other, _CONTAINER_):
                 self._code_obj_tree.extend(__other._code_obj_tree)
                 return
-            elif (
-                isinstance(__other) is _CODEOBJECT_ or isinstance(__other) is LazyString
-            ):
+            elif isinstance(__other, _CODEOBJECT_) or isinstance(__other, LazyString):
                 object = __other
             else:
                 raise TypeError
@@ -271,45 +270,6 @@ class CodeWriter(_CONTAINER_):
         """
         self._formatter = __formatter
         _CONTAINER_.__init__(self)
-
-    def add(self, __object: str | Iterable[_CODEOBJECT_] | CodeText):
-        """Add a CodeObject to the CodeWriter tree.
-
-        Items must be implementations of CodeObject, or be plain text.
-
-        Examples:
-            >>> import ecdypy as ec
-            >>> cwr = ec.CodeWriter()
-            >>> text = ec.CodeText("Sample Text 1")
-            >>> cwr.add([text, "More Text"])
-            >>> print(cwr)
-
-        :param __object: Item(s) to add to the CodeWriter tree.
-        :type __object: str | Iterable[CodeObject] | CodeText
-        :raises TypeError: Type of item(s) cannot be added to the CodeWriter tree.
-        """
-        try:
-            object = CodeText("")
-            if isinstance(__object, list):
-                for item in __object:
-                    self.add(item)
-                return
-            if type(__object) is str:
-                object = CodeText(__object)
-            elif type(__object) is CodeWriter:
-                self._code_obj_tree.extend(__object._code_obj_tree)
-                return
-            elif type(__object) is CodeText:
-                object = __object
-            else:
-                raise TypeError
-            self._code_obj_tree.append(object)
-
-        except TypeError as e:
-            print(
-                f"No Implementation for adding type '{type(__object)}' to CodeWriter."
-            )
-            raise
 
     def add_auto_gen_comment(
         self, __license: str | None = None, __author: str | list[str] | None = None

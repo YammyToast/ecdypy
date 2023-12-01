@@ -240,10 +240,9 @@ class Function(_CONTAINER_, _DECLARABLE_, _DEFINABLE_):
         return buf
 
     def get_definition(self, __formatter: Formatter = default_formatter):
-        return LazyString(self, self._get_definition)
+        return LazyString(self, getattr(self, "_get_definition"))
 
     def get_declaration(self, __formatter: Formatter = default_formatter):
-        print(getattr(self, "_get_declaration"))
         return LazyString(self, getattr(self, "_get_declaration"))
 
     def _get_definition(self, __formatter: Formatter = default_formatter):
@@ -252,8 +251,8 @@ class Function(_CONTAINER_, _DECLARABLE_, _DEFINABLE_):
         buf += f" {{{__formatter._separator}"
 
         for line in self._code_obj_tree:
-            buf += f"{__formatter._indent_spaces}{line}{';' if line[-1] != ';' else ''}"
-        buf += f"}}"
+            buf += f"{__formatter._indent_spaces}{str(line)}"
+        buf += f"\n}}"
         return buf
 
     def _get_declaration(self, __formatter: Formatter = default_formatter):
