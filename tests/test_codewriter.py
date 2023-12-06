@@ -10,7 +10,7 @@ sys.path.append(parent)
 
 
 from ecdypy.codewriter import CodeWriter, CodeText, default_formatter
-from ecdypy.rconstructs import Function
+from ecdypy.rconstructs import Variable, Function
 from ecdypy.rtypes import RTypes
 
 # ==============================================================================================
@@ -82,7 +82,9 @@ def test_codewriter_container():
     my_parameter_map = [{"name": RTypes.str, "password": RTypes.str, "age": RTypes.u8}]
 
     my_func = Function("login", my_parameter_map, RTypes.str)
-    my_func.add("TEst")
+    my_func.add("Test")
+
+    my_variable = Variable("my_var_1", RTypes.i32, 10)
 
     cwr.add(my_func.get_definition())
     print(cwr)

@@ -251,7 +251,7 @@ class Function(_CONTAINER_, _DECLARABLE_, _DEFINABLE_):
         buf += f" {{{__formatter._separator}"
 
         for line in self._code_obj_tree:
-            buf += f"{__formatter._indent_spaces}{str(line)}"
+            buf += f"{' '*__formatter._indent_spaces}{str(line)}"
         buf += f"\n}}"
         return buf
 
