@@ -4,7 +4,6 @@ from ecdypy.rconstructs import Variable, Function
 import sys
 import os
 
-import pytest
 import warnings
 
 import re

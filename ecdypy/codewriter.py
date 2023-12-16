@@ -5,7 +5,7 @@ from typing import Iterable
 
 from collections import deque
 from dataclasses import dataclass
-
+import traceback
 
 from ._meta import __version__, __source__
 
@@ -78,31 +78,49 @@ class _CONTAINER_(object):
         :raises TypeError: Type of item(s) cannot be added to the CodeWriter tree.
         """
         try:
-            object = None
 
             if isinstance(__other, list):
                 for item in __other:
                     self.add(item)
                 return
 
-            if isinstance(__other, str):
-                object = CodeText(__other)
-            elif isinstance(__other, CodeText):
-                object = __other
+            if isinstance(__other, _DECLARABLE_):
+                self._code_obj_tree.append(__other.get_declaration())
+
+            if isinstance(__other, _DEFINABLE_):
+                self._code_obj_tree.append(__other.get_definition())
             elif isinstance(__other, _CONTAINER_):
                 self._code_obj_tree.extend(__other._code_obj_tree)
-                return
-            elif isinstance(__other, _CODEOBJECT_) or isinstance(__other, LazyString):
-                object = __other
-            else:
-                raise TypeError
 
-            if object != None:
-                self._code_obj_tree.append(object)
+            if isinstance(__other, str):
+                self._code_obj_tree.append(CodeText(__other))
+            if (
+                isinstance(__other, CodeText)
+                or isinstance(__other, _CODEOBJECT_)
+                or isinstance(__other, LazyString)
+            ):
+                self._code_obj_tree.append(__other)
 
         except TypeError as e:
             print(f"No Implementation for adding type '{type(__other)}' to CodeWriter.")
             raise
+
+    def empty(self: _CONTAINER_):
+        """Empty the container's tree.
+        :return: True if the function executed successfully.
+        :rtype: True
+        """
+        self._code_obj_tree.clear()
+        return True
+
+    def __str__(self):
+        """Output the contents of the Container's tree.
+        The generated string will be the code representation of all CodeObjects added to the Container.
+        :return: String containing lines seperated with the formatting line seperator that is the code representation of all CodeObjects stored in the container.
+        :rtype: str
+        """
+        buf = [str(x) for x in self._code_obj_tree]
+        return self._formatter._separator.join(buf)
 
 
 class _CODEOBJECT_(ABC):
@@ -315,17 +333,6 @@ class CodeWriter(_CONTAINER_):
         text.add_text("*/")
 
         self.add(text)
-
-    def __str__(self):
-        """Output the contents of the CodeWriter tree.
-
-        The generated string will be the code representation of all CodeObjects added to the CodeWriter.
-
-        :return: _description_
-        :rtype: _type_
-        """
-        buf = [str(x) for x in self._code_obj_tree]
-        return self._formatter._separator.join(buf)
 
     def __add__(self, __other: str | Iterable[_CODEOBJECT_] | CodeText):
         self.add(__other)
