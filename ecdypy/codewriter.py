@@ -50,7 +50,9 @@ class _DEFINABLE_(ABC):
 
 
 class _CONTAINER_(object):
-    def __init__(self, __init=None):
+    def __init__(self, __init=None, __formatter: Formatter = default_formatter):
+        self._formatter = __formatter
+        self._indent = 0
         init = __init
         if isinstance(init, CodeWriter):
             self._code_obj_tree = init._code_obj_tree
@@ -119,7 +121,12 @@ class _CONTAINER_(object):
         :return: String containing lines seperated with the formatting line seperator that is the code representation of all CodeObjects stored in the container.
         :rtype: str
         """
-        buf = [str(x) for x in self._code_obj_tree]
+        buf = []
+        for object in self._code_obj_tree:
+            if isinstance(object, LazyString):
+                if isinstance(object._obj, _CONTAINER_):
+                    object._obj._indent = self._indent + 1
+        buf = [f"{str(x)}" for x in self._code_obj_tree]
         return self._formatter._separator.join(buf)
 
 
@@ -287,6 +294,7 @@ class CodeWriter(_CONTAINER_):
         :type __formatter: Formatter, optional
         """
         self._formatter = __formatter
+        self._indent = 0
         _CONTAINER_.__init__(self)
 
     def add_auto_gen_comment(

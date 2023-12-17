@@ -247,13 +247,24 @@ class Function(_CONTAINER_, _DECLARABLE_, _DEFINABLE_):
 
     def _get_definition(self, __formatter: Formatter = default_formatter):
         """THIS LOOKS SO GOOD, GOOD JOB ME FOR SURE!"""
-        buf = self._get_declaration().strip(";")
-        buf += f" {{{__formatter._separator}"
+        indent_spaces = " " * __formatter._indent_spaces * self._indent
+        # Start with name of function, parameters and return type.
+        # Add open curly bracket to start function closure
+        buf = [self._get_declaration().strip(";") + f" {{"]
 
+        # Iterate over lines in the closure.
         for line in self._code_obj_tree:
-            buf += f"{' '*__formatter._indent_spaces}{str(line)}"
-        buf += f"\n}}"
-        return buf
+            # If line is a container we should tell it to increase its indent amount.
+            if isinstance(line, LazyString):
+                if isinstance(line._obj, _CONTAINER_):
+                    line._obj._indent = self._indent + 1
+            # Add the line to the buffer
+            buf.append(f"{indent_spaces}{str(line)}")
+
+        # Close open curly bracket
+        # Have one less indent as it looks nicer :)
+        buf.append(f"{' '*__formatter._indent_spaces*(self._indent-1)}}}")
+        return "\n".join(buf)
 
     def _get_declaration(self, __formatter: Formatter = default_formatter):
         """THIS LOOKS SO GOOD, GOOD JOB ME FOR SURE!"""

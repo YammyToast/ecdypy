@@ -1,6 +1,7 @@
 from ecdypy.macros import Macro, Derive
 from ecdypy.rtypes import RTypes, Tuple, Struct
 from ecdypy.rconstructs import Variable, Function
+from ecdypy.codewriter import CodeWriter
 import sys
 import os
 
@@ -95,4 +96,29 @@ def test_functions_init():
 
 
 def test_functions_add():
-    print("test")
+    cwr = CodeWriter()
+    variable_one = Variable("my_var_1", RTypes.i32, 10)
+    cwr.add(variable_one.get_declaration())
+
+    my_func = Function(name="my_func", returns=RTypes.str)
+    my_func.add(variable_one)
+    cwr.add(my_func.get_definition())
+
+    variable_two = Variable(name="my_var_2", type="i32", value=-256, check=False)
+    cwr.add(variable_two.get_declaration())
+
+    cwr_str = re.sub(replace_pattern, "", str(cwr))
+    assert (
+        cwr_str
+        == """letmy_var_1:i32=10;fnmy_func()->str{letmy_var_1:i32=10;}letmy_var_2:i32=-256;"""
+    )
+
+    cwr.empty()
+    my_inner_func = Function(name="get_name", returns=RTypes.str)
+    my_func.add(my_inner_func.get_definition())
+    my_inner_func.add(variable_two.get_declaration())
+
+    # print(my_func._code_obj_tree)
+    # print(my_func.get_definition())
+    cwr.add(my_func.get_definition())
+    print(cwr)
