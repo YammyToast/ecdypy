@@ -70,7 +70,6 @@ def test_variables_extra():
 
 
 def test_functions_init():
-
     my_parameter_map = [{"name": RTypes.str, "password": RTypes.str, "age": RTypes.u8}]
 
     my_func = Function("login", my_parameter_map, RTypes.str)
@@ -118,7 +117,9 @@ def test_functions_add():
     my_func.add(my_inner_func.get_definition())
     my_inner_func.add(variable_two.get_declaration())
 
-    # print(my_func._code_obj_tree)
-    # print(my_func.get_definition())
     cwr.add(my_func.get_definition())
-    print(cwr)
+    cwr_str = re.sub(replace_pattern, "", str(cwr))
+    assert (
+        cwr_str
+        == """fnmy_func()->str{letmy_var_1:i32=10;fnget_name()->str{letmy_var_2:i32=-256;}}"""
+    )
