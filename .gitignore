@@ -1,6 +1,6 @@
 docs/_build/
 sandbox.py
-ecdypy/__pycache__/
+*/__pycache__/
 .coverage
 htmlcov
 todocument.txt

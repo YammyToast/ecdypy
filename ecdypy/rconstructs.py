@@ -51,8 +51,50 @@ class Variable(_DECLARABLE_):
         >>> # let my_var_1: i32 = 10;
 
     """
-
     def __init__(self, *args, **kwargs) -> None:
+        """Ecdypy Variable Constructor
+
+            "name": kwargs_list.get("name"),
+            "type": kwargs_list.get("type"),
+            "value": kwargs_list.get("value"),
+            "attrs": kwargs_list.get("attrs"),
+            "macros": kwargs_list.get("macros"),
+
+        Args:
+            *args:
+                name: In-code name of the variable (str). I.e. let my_var_one
+
+                type: The type of the variable (_TYPE_ | RTypes). It is required that the type implements the _TYPE_ interface.
+
+                value: Initial value of the variable.
+
+                attrs: List of attributes to assign to the variable.
+
+                macros: List of macros to assign to the variable (list[Macro | Derive]). Macros should be instances of, or inherit from, the Macro class.
+            \\*\\*kwargs: keyword arguments in ['name', 'type', 'value', 'attrs', 'macros']
+                See *args.
+
+        Examples:
+            >>> import ecdypy as ec
+            >>> variable_one = ec.Variable("my_var_1", ec.RTypes.i32, 10)
+            >>> print(variable_one.get_declaration())
+            >>> # let my_var_1: i32 = 10;
+            >>> print(variable_one)
+            >>> # my_var_1
+            >>> \n
+            >>> derives = ec.Derive("Debug", "PartialEq")
+            >>> variable_two = ec.Variable("macro_variable", RTypes.u64, 0, macros=derives)
+            >>> print(variable_two.get_declaration())
+            >>> #[derive(Debug,PartialEq)]
+            >>> #let macro_variable: u64 = 0;
+            >>> \n
+            >>> my_tuple = ec.Tuple("u8", ec.RTypes.u16, ec.RTypes.i16)
+            >>> variable_three = ec.Variable("tuple_variable", my_tuple, [8, 16, 32])
+            >>> print(variable_three.get_declaration())
+            >>> # let tuple_variable: (u8, u16, i16) = (8, 16, 32);
+    
+
+        """
         try:
             arg_vals = Variable._parse_args(list(args), kwargs)
             if arg_vals.get("name") == -1:
@@ -131,6 +173,19 @@ class Variable(_DECLARABLE_):
             return __type.value.value_from(__value)
 
     def get_declaration(self, __formatter: Formatter = default_formatter) -> str:
+        """Get the string representation of the variable declaration.
+
+        Examples:
+        >>> import ecdypy as ec
+        >>> variable_one = Variable("my_var_1", RTypes.i32, 10)
+        >>> print(variable_one.get_declaration())
+        >>> # let my_var_1: i32 = 10;
+        >>> \n 
+        >>> cwr = CodeWriter(...)
+        >>> cwr.add(variable_one)
+        >>> print(cwr)
+        >>> # let my_var_1: i32 = 10;
+        """
         buf = ""
         if self._macros != None:
             buf = buf + "\n".join(self._macros) + "\n"
@@ -156,13 +211,45 @@ class Variable(_DECLARABLE_):
         return buf
 
     def get_name(self) -> str:
+        """Returns the set name of the variable as a string. This is equivalent to casting the variable as a string.
+
+        Examples:
+            >>> import ecdypy as ec
+            >>> variable_one = Variable("my_var_1", RTypes.i32, 10)
+            >>> print(variable_one.get_name())
+            >>> # my_var_1
+            >>> \n
+            >>> assert variable_one.get_name() == str(variable_one)
+         """
         return self._name
 
     def get_type(self) -> _TYPE_:
+        """Returns the object instance used as the variable's type.
+        
+        Examples:
+            >>> import ecdypy as ec
+            >>> variable_one = Variable("my_var_1", RTypes.i32, 10)
+            >>> print(variable_one.get_type())
+            >>> # i32
+            >>> \n
+            >>> assert isinstance(variable_one.get_type(), ec._TYPE_) == True
+
+        """
+        if type(self._type) is RTypes:
+            return self._type.value
         return self._type
 
     def __str__(self) -> str:
-        return self._name
+        """
+        Examples:
+            >>> import ecdypy as ec
+            >>> variable_one = Variable("my_var_1", RTypes.i32, 10)
+            >>> print(str(variable_one))
+            >>> # my_var_1
+            >>> \n
+            >>> assert str(variable_one) == variable_one.get_name()
+        """    
+        return self.get_name()
 
 
 # ==============================================================================================
@@ -170,6 +257,7 @@ class Variable(_DECLARABLE_):
 
 
 class Function(_CONTAINER_, _DECLARABLE_, _DEFINABLE_):
+
     def __init__(self, *args, **kwargs) -> None:
         try:
             arg_vals = Function._parse_args(list(args), kwargs)
