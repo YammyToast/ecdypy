@@ -23,7 +23,7 @@ This project is documented using Sphinx, and can be viewed at:
 🛑 WIP!
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    All Documentation <documentation>
 
@@ -35,4 +35,3 @@ Examples
    :maxdepth: 2
 
    Examples <examples>
-

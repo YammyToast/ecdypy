@@ -1,10 +1,10 @@
 from ecdypy.macros import Macro, Derive
 from ecdypy.rtypes import RTypes, Tuple, Struct
-from ecdypy.rconstructs import Variable
+from ecdypy.rconstructs import Variable, Function
+from ecdypy.codewriter import CodeWriter
 import sys
 import os
 
-import pytest
 import warnings
 
 import re
@@ -67,3 +67,59 @@ def test_variables_extra():
 
 # ==============================================================================================
 # ==============================================================================================
+
+
+def test_functions_init():
+    my_parameter_map = [{"name": RTypes.str, "password": RTypes.str, "age": RTypes.u8}]
+
+    my_func = Function("login", my_parameter_map, RTypes.str)
+    assert str(my_func) == "login"
+    my_func_decl = re.sub(replace_pattern, "", str(my_func._get_declaration()))
+    my_func_def = re.sub(replace_pattern, "", str(my_func._get_definition()))
+    assert my_func_decl == "fnlogin(name:str,password:str,age:u8)->str;"
+    assert my_func_def == """fnlogin(name:str,password:str,age:u8)->str{}"""
+
+    my_alt = Function(name="alt_login", parameters=my_parameter_map, returns=RTypes.str)
+    alt_func_decl = re.sub(replace_pattern, "", str(my_alt._get_declaration()))
+    alt_func_def = re.sub(replace_pattern, "", str(my_alt._get_definition()))
+    assert str(my_alt) == "alt_login"
+    assert alt_func_decl == "fnalt_login(name:str,password:str,age:u8)->str;"
+    assert alt_func_def == """fnalt_login(name:str,password:str,age:u8)->str{}"""
+
+    my_short = Function("short")
+    assert str(my_short) == "short"
+    short_func_decl = re.sub(replace_pattern, "", str(my_short._get_declaration()))
+    short_func_def = re.sub(replace_pattern, "", str(my_short._get_definition()))
+    assert str(short_func_decl) == "fnshort();"
+    assert str(short_func_def) == "fnshort(){}"
+
+
+def test_functions_add():
+    cwr = CodeWriter()
+    variable_one = Variable("my_var_1", RTypes.i32, 10)
+    cwr.add(variable_one.get_declaration())
+
+    my_func = Function(name="my_func", returns=RTypes.str)
+    my_func.add(variable_one)
+    cwr.add(my_func.get_definition())
+
+    variable_two = Variable(name="my_var_2", type="i32", value=-256, check=False)
+    cwr.add(variable_two.get_declaration())
+
+    cwr_str = re.sub(replace_pattern, "", str(cwr))
+    assert (
+        cwr_str
+        == """letmy_var_1:i32=10;fnmy_func()->str{letmy_var_1:i32=10;}letmy_var_2:i32=-256;"""
+    )
+
+    cwr.empty()
+    my_inner_func = Function(name="get_name", returns=RTypes.str)
+    my_func.add(my_inner_func.get_definition())
+    my_inner_func.add(variable_two.get_declaration())
+
+    cwr.add(my_func.get_definition())
+    cwr_str = re.sub(replace_pattern, "", str(cwr))
+    assert (
+        cwr_str
+        == """fnmy_func()->str{letmy_var_1:i32=10;fnget_name()->str{letmy_var_2:i32=-256;}}"""
+    )
