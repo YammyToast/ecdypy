@@ -378,7 +378,7 @@ class Function(_CONTAINER_, _DECLARABLE_, _DEFINABLE_):
                 raise InvalidParameterArgument(param)
         return buf
 
-    def get_definition(self, __formatter: Formatter = default_formatter):
+    def get_definition(self, __formatter: Formatter = default_formatter) -> LazyString:
         """Get the string representation of the variable definition.
 
         Examples:
@@ -395,12 +395,24 @@ class Function(_CONTAINER_, _DECLARABLE_, _DEFINABLE_):
             >>> # let my_var_1: i32 = 10;
             >>> # }
 
-        :return: LazyString which can be evaluated to retrieve the variable's declaration.
+        :return: LazyString which can be evaluated to retrieve the variable's definition.
         :rtype: LazyString
         """
         return LazyString(self, getattr(self, "_get_definition"))
 
-    def get_declaration(self, __formatter: Formatter = default_formatter):
+    def get_declaration(self, __formatter: Formatter = default_formatter) -> LazyString:
+        """Get the string representation of the variable declaration.
+
+        Examples:
+            >>> import ecdypy as ec
+            >>> my_parameter_map = [{"name": ec.RTypes.str, "password": ec.RTypes.str, "age": ec.RTypes.u8}]
+            >>> my_func = ec.Function("login", my_parameter_map, ec.RTypes.str)
+            >>> print(my_func.get_declaration())
+            >>> # fn login(name: str, password: str, age: u8) -> str;
+            
+        :return: LazyString which can be evaluated to retrieve the variable's declaration.
+        :rtype: LazyString
+        """
         return LazyString(self, getattr(self, "_get_declaration"))
 
     def _get_definition(self, __formatter: Formatter = default_formatter):
