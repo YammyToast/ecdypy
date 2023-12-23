@@ -51,26 +51,21 @@ class Variable(_DECLARABLE_):
         >>> # let my_var_1: i32 = 10;
 
     """
+
     def __init__(self, *args, **kwargs) -> None:
         """Ecdypy Variable Constructor
 
-            "name": kwargs_list.get("name"),
-            "type": kwargs_list.get("type"),
-            "value": kwargs_list.get("value"),
-            "attrs": kwargs_list.get("attrs"),
-            "macros": kwargs_list.get("macros"),
-
         Args:
             *args:
-                name: In-code name of the variable (str). I.e. let my_var_one
+                name {str}: In-code name of the variable. I.e. let my_var_one
 
-                type: The type of the variable (_TYPE_ | RTypes). It is required that the type implements the _TYPE_ interface.
+                type {_TYPE_ | RTypes}: The type of the variable. It is required that the type implements the _TYPE_ interface.
 
                 value: Initial value of the variable.
 
                 attrs: List of attributes to assign to the variable.
 
-                macros: List of macros to assign to the variable (list[Macro | Derive]). Macros should be instances of, or inherit from, the Macro class.
+                macros {list[Macro | Derive]}: List of macros to assign to the variable. Macros should be instances of, or inherit from, the Macro class.
             \\*\\*kwargs: keyword arguments in ['name', 'type', 'value', 'attrs', 'macros']
                 See *args.
 
@@ -92,7 +87,7 @@ class Variable(_DECLARABLE_):
             >>> variable_three = ec.Variable("tuple_variable", my_tuple, [8, 16, 32])
             >>> print(variable_three.get_declaration())
             >>> # let tuple_variable: (u8, u16, i16) = (8, 16, 32);
-    
+
 
         """
         try:
@@ -172,20 +167,26 @@ class Variable(_DECLARABLE_):
         if isinstance(__type, RTypes):
             return __type.value.value_from(__value)
 
-    def get_declaration(self, __formatter: Formatter = default_formatter) -> str:
+    def get_declaration(self, __formatter: Formatter = default_formatter) -> LazyString:
         """Get the string representation of the variable declaration.
 
         Examples:
-        >>> import ecdypy as ec
-        >>> variable_one = Variable("my_var_1", RTypes.i32, 10)
-        >>> print(variable_one.get_declaration())
-        >>> # let my_var_1: i32 = 10;
-        >>> \n 
-        >>> cwr = CodeWriter(...)
-        >>> cwr.add(variable_one)
-        >>> print(cwr)
-        >>> # let my_var_1: i32 = 10;
+            >>> import ecdypy as ec
+            >>> variable_one = Variable("my_var_1", RTypes.i32, 10)
+            >>> print(variable_one.get_declaration())
+            >>> # let my_var_1: i32 = 10;
+            >>> \n
+            >>> cwr = CodeWriter(...)
+            >>> cwr.add(variable_one)
+            >>> print(cwr)
+            >>> # let my_var_1: i32 = 10;
+
+        :return: LazyString which can be evaluated to retrieve the variable's declaration.
+        :rtype: LazyString
         """
+        return LazyString(self, getattr(self, "_get_declaration"))
+
+    def _get_declaration(self, __formatter: Formatter = default_formatter) -> str:
         buf = ""
         if self._macros != None:
             buf = buf + "\n".join(self._macros) + "\n"
@@ -220,12 +221,15 @@ class Variable(_DECLARABLE_):
             >>> # my_var_1
             >>> \n
             >>> assert variable_one.get_name() == str(variable_one)
-         """
+
+        :return: Name given to the variable.
+        :rtype: str
+        """
         return self._name
 
     def get_type(self) -> _TYPE_:
         """Returns the object instance used as the variable's type.
-        
+
         Examples:
             >>> import ecdypy as ec
             >>> variable_one = Variable("my_var_1", RTypes.i32, 10)
@@ -234,6 +238,8 @@ class Variable(_DECLARABLE_):
             >>> \n
             >>> assert isinstance(variable_one.get_type(), ec._TYPE_) == True
 
+        :return: Type given to the variable.
+        :rtype: _TYPE_
         """
         if type(self._type) is RTypes:
             return self._type.value
@@ -248,7 +254,7 @@ class Variable(_DECLARABLE_):
             >>> # my_var_1
             >>> \n
             >>> assert str(variable_one) == variable_one.get_name()
-        """    
+        """
         return self.get_name()
 
 
@@ -257,8 +263,53 @@ class Variable(_DECLARABLE_):
 
 
 class Function(_CONTAINER_, _DECLARABLE_, _DEFINABLE_):
+    """Class for creating Rust Function.
+
+    Functions can have other CodeObjects added to their closure, including other Functions.
+
+    Examples:
+        >>> import ecdypy as ec
+        >>> my_parameter_map = [{"name": ec.RTypes.str, "password": ec.RTypes.str, "age": ec.RTypes.u8}]
+        >>> my_func = ec.Function("login", my_parameter_map, ec.RTypes.str)
+        >>> print(my_func.get_declaration())
+        >>> # fn login(name: str, password: str, age: u8) -> str;
+        >>> \n
+        >>> variable_one = ec.Variable("my_var_1", ec.RTypes.i32, 10)
+        >>> my_func.add(variable_one)
+        >>> print(my_func.get_definition())
+        >>> # fn login(name: str, password: str, age: u8) -> str {
+        >>> #     let my_var_1: i32 = 10;
+        >>> # }
+    """
 
     def __init__(self, *args, **kwargs) -> None:
+        """Ecdypy Function Constructor
+
+        Args:
+            *args:
+                name {str}: In-code name of the variable. I.e. let my_var_one
+
+                parameters {dict[str, _TYPE_]}: Dictionary of parameters. Where each key is the in-code name of the parameter and value is its type.
+
+                returns {_TYPE_}: Return type of the function.
+
+                attrs: List of attributes to assign to the variable.
+
+                macros {list[Macro | Derive]}: List of macros to assign to the function. Macros should be instances of, or inherit from, the Macro class.
+            \\*\\*kwargs: keyword arguments in ['name', 'parameters', 'returns', 'attrs', 'macros']
+                See *args.
+
+        Examples:
+            >>> import ecdypy as ec
+            >>> my_parameter_map = [{"name": ec.RTypes.str, "password": ec.RTypes.str, "age": ec.RTypes.u8}]
+            >>> my_func = ec.Function("login", my_parameter_map, ec.RTypes.str)
+            >>> print(my_func.get_declaration())
+            >>> # fn login(name: str, password: str, age: u8) -> str;
+            >>> \n
+            >>> my_kwarg_func = ec.Function(name="alt_login", parameters=my_parameter_map, returns=ec.RTypes.str)
+            >>> print(my_kwarg_func.get_declaration())
+            >>> # fn alt_login(name: str, password: str, age: u8) -> str;
+        """
         try:
             arg_vals = Function._parse_args(list(args), kwargs)
 
@@ -327,10 +378,41 @@ class Function(_CONTAINER_, _DECLARABLE_, _DEFINABLE_):
                 raise InvalidParameterArgument(param)
         return buf
 
-    def get_definition(self, __formatter: Formatter = default_formatter):
+    def get_definition(self, __formatter: Formatter = default_formatter) -> LazyString:
+        """Get the string representation of the variable definition.
+
+        Examples:
+            >>> import ecdypy as ec
+            >>> my_parameter_map = [{"name": ec.RTypes.str, "password": ec.RTypes.str, "age": ec.RTypes.u8}]
+            >>> my_func = ec.Function("login", my_parameter_map, ec.RTypes.str)
+            >>> print(my_func.get_definition())
+            >>> # fn login(name: str, password: str, age: u8) -> str {}
+            >>> \n
+            >>> variable_one = Variable("my_var_1", RTypes.i32, 10)
+            >>> my_func.add(variable_one)
+            >>> print(my_func.get_definition())
+            >>> # fn login(name: str, password: str, age: u8) -> str {
+            >>> # let my_var_1: i32 = 10;
+            >>> # }
+
+        :return: LazyString which can be evaluated to retrieve the variable's definition.
+        :rtype: LazyString
+        """
         return LazyString(self, getattr(self, "_get_definition"))
 
-    def get_declaration(self, __formatter: Formatter = default_formatter):
+    def get_declaration(self, __formatter: Formatter = default_formatter) -> LazyString:
+        """Get the string representation of the variable declaration.
+
+        Examples:
+            >>> import ecdypy as ec
+            >>> my_parameter_map = [{"name": ec.RTypes.str, "password": ec.RTypes.str, "age": ec.RTypes.u8}]
+            >>> my_func = ec.Function("login", my_parameter_map, ec.RTypes.str)
+            >>> print(my_func.get_declaration())
+            >>> # fn login(name: str, password: str, age: u8) -> str;
+            
+        :return: LazyString which can be evaluated to retrieve the variable's declaration.
+        :rtype: LazyString
+        """
         return LazyString(self, getattr(self, "_get_declaration"))
 
     def _get_definition(self, __formatter: Formatter = default_formatter):
