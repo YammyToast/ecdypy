@@ -52,7 +52,7 @@ class _DEFINABLE_(ABC):
 class _CONTAINER_(object):
     def __init__(self, __init=None, __formatter: Formatter = default_formatter):
         self._formatter = __formatter
-        self._indent = 0
+        self._indent = 1
         init = __init
         if isinstance(init, CodeWriter):
             self._code_obj_tree = init._code_obj_tree

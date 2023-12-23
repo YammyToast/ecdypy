@@ -443,7 +443,7 @@ class Tuple(_TYPE_):
                     list[_TYPE_]: A list of objects that implement the _TYPE_ interface.
 
 
-        :return: bool. True if the given values fit within the Tuple's types constraints. False otherwise.
+        :return: True if the given values fit within the Tuple's types constraints. False otherwise.
         :rtype: bool
         """
         arg_vals = list(args)
@@ -508,7 +508,7 @@ class Tuple(_TYPE_):
     def get_types_count(self) -> int:
         """Returns the number of types in the Tuple, including those in nested Tuples.
 
-        :return: int. Number of types in Tuple.
+        :return: Number of types in Tuple.
         :rtype: int
         """
         count = 0
@@ -529,7 +529,7 @@ class Tuple(_TYPE_):
 
     def __str__(self):
         """Generates the string representation of the tuple.
-        :return: str. String representation of tuple.
+        :return: String representation of tuple.
         :rtype: str
         """
         buf = [str(x) for x in self._type_tree]
@@ -717,7 +717,7 @@ class Struct(_TYPE_, _DECLARABLE_):
                     list[_TYPE_]: A list of objects that implement the _TYPE_ interface.
 
 
-        :return: bool. True if the given values fit within the Struct's types constraints. False otherwise.
+        :return: True if the given values fit within the Struct's types constraints. False otherwise.
         :rtype: bool
         """
         try:
@@ -878,7 +878,7 @@ class Struct(_TYPE_, _DECLARABLE_):
         This is equivalent to returning the Struct's name.
 
 
-        :return: str. Struct's name.
+        :return: Struct's name.
         :rtype: str
         """
         return self.get_name()
