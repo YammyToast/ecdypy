@@ -8,6 +8,8 @@ from .rtypes import Tuple
 from .rtypes import Struct
 from .rconstructs import Variable
 from .rconstructs import Function
+from .rconstructs import MatchStatement
+from .rconstructs import Arm
 from .macros import Derive
 from .macros import Macro
 
@@ -21,6 +23,8 @@ __all__ = (
     "Struct",
     "Variable",
     "Function",
+    "MatchStatement",
+    "Arm"
     "Decorator",
     "Derive",
     "Macro",
