@@ -132,6 +132,7 @@ def test_functions_add():
 # ==============================================================================================
 # ==============================================================================================
 
+
 def test_arm():
     arm_one = Arm("test")
 
@@ -142,15 +143,43 @@ def test_arm():
     assert arm_one_str == """test=>{letmy_var_1:i32=10;}"""
     # =====
     arm_default = Arm()
-    
-    tuple_template = Tuple(["u8", "u64", ["u16", "u32"]], "u128", ("u16", "u16"), check=True)
+
+    tuple_template = Tuple(
+        ["u8", "u64", ["u16", "u32"]], "u128", ("u16", "u16"), check=True
+    )
     variable_two = Variable("my_var_2", tuple_template, [1, 1, 2, 3, 4, (5, 6)])
-    
+
     arm_default.add(variable_two)
     arm_default_str = re.sub(replace_pattern, "", str(arm_default))
-    assert arm_default_str == """_=>{letmy_var_2:(u8,u64,u16,u32,u128,(u16,u16))=(1,1,2,3,4,(5,6));}"""
+    assert (
+        arm_default_str
+        == """_=>{letmy_var_2:(u8,u64,u16,u32,u128,(u16,u16))=(1,1,2,3,4,(5,6));}"""
+    )
 
-# def test_match_statement():
-#     cwr = CodeWriter()
 
-#     match_one = 
+def test_match_statement():
+    cwr = CodeWriter()
+
+    my_param = Variable("my_param", RTypes.i32, 5)
+    match_one = MatchStatement(my_param)
+    # =====
+    arm_default = Arm()
+    tuple_template = Tuple(
+        ["u8", "u64", ["u16", "u32"]], "u128", ("u16", "u16"), check=True
+    )
+    variable_two = Variable("my_var_2", tuple_template, [1, 1, 2, 3, 4, (5, 6)])
+    arm_default.add(variable_two)
+    # =====
+    arm_one = Arm("test")
+    variable_one = Variable("my_var_1", RTypes.i32, 10)
+    arm_one.add(variable_one)
+    # =====
+    # Add default arm first to check that it is always shuffled to be last.
+    match_one.add(arm_default)
+    match_one.add(arm_one)
+    # =====
+    match_one_str = re.sub(replace_pattern, "", str(match_one))
+    assert (
+        match_one_str
+        == """matchmy_param{test=>{letmy_var_1:i32=10;},_=>{letmy_var_2:(u8,u64,u16,u32,u128,(u16,u16))=(1,1,2,3,4,(5,6));},}"""
+    )
