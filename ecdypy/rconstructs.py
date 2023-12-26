@@ -9,6 +9,7 @@ import re
 
 from .codewriter import (
     Formatter,
+    _CODEOBJECT_,
     default_formatter,
     _DECLARABLE_,
     _DEFINABLE_,
@@ -31,6 +32,14 @@ class InvalidMacroArg(Exception):
 
 
 class InvalidParameterArgument(Exception):
+    pass
+
+
+class AddNoneArmToMatch(Exception):
+    pass
+
+
+class ArmAlreadyExists(Exception):
     pass
 
 
@@ -409,7 +418,7 @@ class Function(_CONTAINER_, _DECLARABLE_, _DEFINABLE_):
             >>> my_func = ec.Function("login", my_parameter_map, ec.RTypes.str)
             >>> print(my_func.get_declaration())
             >>> # fn login(name: str, password: str, age: u8) -> str;
-            
+
         :return: LazyString which can be evaluated to retrieve the variable's declaration.
         :rtype: LazyString
         """
@@ -464,5 +473,83 @@ class Function(_CONTAINER_, _DECLARABLE_, _DEFINABLE_):
 # ==============================================================================================
 
 
-class MatchStatement:
-    pass
+class Arm(_CONTAINER_):
+    """Helper class for creating Arms of a MatchStatement"""
+
+    def __init__(
+        self,
+        __condition_value: str | int = "_",
+        __formatter: Formatter = default_formatter,
+    ) -> None:
+        self._condition_value = __condition_value
+        self._formatter = __formatter
+        super().__init__()
+
+    def get_condition_value(self):
+        return self._condition_value
+
+    def __str__(self):
+        buf = []
+        indent_spaces = " " * self._formatter._indent_spaces * self._indent
+
+        buf.append(f"{self._condition_value} => {{")
+        for code_object in self._code_obj_tree:
+            buf.append(
+                f"{indent_spaces + (' ' * self._formatter._indent_spaces)}{code_object}"
+            )
+        buf.append(f" {indent_spaces}}}")
+        return "\n".join(buf)
+
+
+class MatchStatement(_CONTAINER_, _CODEOBJECT_):
+    def __init__(
+        self, __parameter: str | Variable, __formatter: Formatter = default_formatter
+    ):
+        self._parameter = __parameter
+        self._arm_list = dict()
+        self._formatter = __formatter
+        super().__init__()
+
+        # Remove code tree from base class as it is ineffective deque.
+        del self._code_obj_tree
+
+    def add(self, __other: Arm):
+        try:
+            if not isinstance(__other, Arm):
+                raise AddNoneArmToMatch(__other)
+
+            key = __other.get_condition_value()
+            if self._arm_list.get(key) != None:
+                raise ArmAlreadyExists(key)
+            self._arm_list[key] = __other
+        except AddNoneArmToMatch as e:
+            traceback.print_stack()
+            print(
+                f"""\nCannot add type {type(e.args[0])} to MatchStatement. ({e.args[0]})"""
+            )
+        except ArmAlreadyExists as e:
+            traceback.print_stack()
+            print(
+                f"""\nArm with case \"{e.args[0]}\", already exists on MatchStatement."""
+            )
+
+    def _build_closure(self, __arm: Arm):
+        buf = []
+        indent_spaces = " " * self._formatter._indent_spaces * self._indent
+        buf.append(f"{indent_spaces}{__arm._condition_value} => {{")
+        closure_indent = " " * self._formatter._indent_spaces * (self._indent + 1)
+        for code_object in __arm._code_obj_tree:
+            buf.append(f"{closure_indent}{code_object}")
+        buf.append(f"{indent_spaces}}},")
+        return buf
+
+    def __str__(self):
+        buf = [f"match {self._parameter} {{"]
+        for arm in self._arm_list.values():
+            if arm._condition_value == "_":
+                continue
+            buf.extend(self._build_closure(arm))
+        if (x := self._arm_list.get("_")) != None:
+            buf.extend(self._build_closure(x))
+        buf.append(f"{' ' * self._formatter._indent_spaces * (self._indent - 1)}}}")
+        return "\n".join(buf)

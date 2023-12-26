@@ -1,6 +1,6 @@
 from ecdypy.macros import Macro, Derive
 from ecdypy.rtypes import RTypes, Tuple, Struct
-from ecdypy.rconstructs import Variable, Function
+from ecdypy.rconstructs import Variable, Function, MatchStatement, Arm
 from ecdypy.codewriter import CodeWriter
 import sys
 import os
@@ -38,7 +38,9 @@ def test_variables_basic():
 
     my_struct = Struct({"A": "u8", "B": "u16"}, name="struct_one")
     variable_three = Variable("my_var_3", my_struct, {"A": 16, "B": 16})
-    three_declaration = re.sub(replace_pattern, "", str(variable_three.get_declaration()))
+    three_declaration = re.sub(
+        replace_pattern, "", str(variable_three.get_declaration())
+    )
     assert (
         str(three_declaration) == """letmy_var_3:struct_one=struct_one{A:16,B:16,};"""
     )
@@ -61,7 +63,9 @@ def test_variables_extra():
     assert two_declaration == """#[DatabaseQuery<New>]letmy_var_2:i16=127;"""
 
     variable_three = Variable("my_var_3", RTypes.i16, variable_two)
-    three_declaration = re.sub(replace_pattern, "", str(variable_three.get_declaration()))
+    three_declaration = re.sub(
+        replace_pattern, "", str(variable_three.get_declaration())
+    )
     assert three_declaration == """letmy_var_3:i16=my_var_2;"""
 
 
@@ -123,3 +127,30 @@ def test_functions_add():
         cwr_str
         == """fnmy_func()->str{letmy_var_1:i32=10;fnget_name()->str{letmy_var_2:i32=-256;}}"""
     )
+
+
+# ==============================================================================================
+# ==============================================================================================
+
+def test_arm():
+    arm_one = Arm("test")
+
+    variable_one = Variable("my_var_1", RTypes.i32, 10)
+
+    arm_one.add(variable_one)
+    arm_one_str = re.sub(replace_pattern, "", str(arm_one))
+    assert arm_one_str == """test=>{letmy_var_1:i32=10;}"""
+    # =====
+    arm_default = Arm()
+    
+    tuple_template = Tuple(["u8", "u64", ["u16", "u32"]], "u128", ("u16", "u16"), check=True)
+    variable_two = Variable("my_var_2", tuple_template, [1, 1, 2, 3, 4, (5, 6)])
+    
+    arm_default.add(variable_two)
+    arm_default_str = re.sub(replace_pattern, "", str(arm_default))
+    assert arm_default_str == """_=>{letmy_var_2:(u8,u64,u16,u32,u128,(u16,u16))=(1,1,2,3,4,(5,6));}"""
+
+# def test_match_statement():
+#     cwr = CodeWriter()
+
+#     match_one = 
