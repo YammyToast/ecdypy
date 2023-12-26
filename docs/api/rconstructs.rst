@@ -1,5 +1,5 @@
 RConstructs
-----------
+-----------
 
 .. automodule:: ecdypy.rconstructs
    :members:
